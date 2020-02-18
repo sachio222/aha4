@@ -5,7 +5,7 @@ Copyright: 2020
 License:
 Description: Training for model implemented from 2019 paper
              "AHA an Artificial Hippocampal Algorithm for Episodic Machine 
-             Learning" by Kowaldo, Ahmed and Rawlinson.
+             Learning" by Kowadlo, Ahmed and Rawlinson.
 
              Runs image through EC, DG / EC-->CA3, CA3, and CA1. This network
              accepts multiple, varied examples of an original sample, and

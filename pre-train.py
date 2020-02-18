@@ -5,7 +5,7 @@ Copyright: 2020
 License:
 Description: Pretraining for model implemented from 2019 paper
              "AHA an Artificial Hippocampal Algorithm for Episodic Machine 
-             Learning" by Kowaldo, Ahmed and Rawlinson.
+             Learning" by Kowadlo, Ahmed and Rawlinson.
 
              Trains visual cortex on Omniglot dataset.
 
@@ -14,7 +14,7 @@ Thanks: Special thanks to Gideon Kowaldo and David Rawlinson for
              As well as @ptrblk in the Pytorch forums for always coming through
              with answers when I needed them. 
 """
-# %%
+
 from pathlib2 import Path
 
 import torch
@@ -141,4 +141,4 @@ utils.load_checkpoint(model_path, model, optimizer, name="pre_train")
 # Start training
 train(model, dataloader, optimizer, loss_fn, params, autosave=False)
 
-# %%
+

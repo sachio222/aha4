@@ -177,6 +177,7 @@ def animate_weights(t, nrow=11, label=None, auto=False):
 
         Usage example:
             >>> animate_weights(conv1_weights, i)
+            
     Args:
         t: (tensor) from "model.layer_name.weight.data" on layer
         iter: (scalar, string) Optional. Shows label for each pass
