@@ -303,7 +303,7 @@ class ECToCA3(nn.Module):
 
 
 class CA3():
-    """Hopfield architecture. Trains in one shot, content addressible memory
+    """Hopfield architecture. Trains in one shot, content addressable memory
     """
 
     def __init__(self, dim1):
