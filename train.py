@@ -168,6 +168,8 @@ def train(model,
                     print(i, ectoca3_loss)
                     # NOTE: Learning rate has large impact on quality of output
                     ectoca3_optimizer.step()
+
+
                     utils.animate_weights(trained_sparse.detach())
 
                 if autosave:
@@ -190,7 +192,6 @@ def train(model,
             #=============RUN CA3 RECALL==============#
 
             ca3_out_recall = step3_ca3.update(ectoca3_out_dressed)
-            ca3_out_recall2 = ca3_out_recall.clone()
 
             ## DISPLAY
             # utils.showme(ca3_out_recall.detach())
@@ -200,7 +201,7 @@ def train(model,
             #=============RUN CA1 ======================#
 
             if not train_mode:
-                ca1_reconstruction = step5_ca1(ca3_out_recall2)
+                ca1_reconstruction = step5_ca1(ca3_out_recall)
             else:
                 for i in range(params.ca1_iters):
                     ca1_reconstruction = step5_ca1(ca3_out_recall)
