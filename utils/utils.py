@@ -75,17 +75,6 @@ def print_full_tensor(tensor):
     torch.set_printoptions(profile="default")
 
 
-def print_full_tensor(tensor):
-    """You know how it only shows part of the tensor when you print?
-
-    Well use this to show the whole thing.
-    """
-
-    torch.set_printoptions(profile="full")
-    print(tensor)
-    torch.set_printoptions(profile="default")
-
-
 def get_save_state(epoch, model, optimizer):
     state = {
         'epoch': epoch + 1,
@@ -181,7 +170,7 @@ def showme(tnsr,
 
 
 def animate_weights(t, nrow=11, label=None, auto=False):
-    """Animates weights during training. 
+    """Animates weights during training. Only works on Mac.
 
     Press ctrl + C in terminal to escape. Change auto to True if you are 
     running on a mac. It is pretty good. 
