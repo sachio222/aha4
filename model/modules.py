@@ -51,7 +51,7 @@ def get_top_k(x, k=10, mask_type="pass_through", topk_dim=0, scatter_dim=0):
 
         else:
             raise Exception(
-                'Valid options: "pass", "hopfield" (-1, 1), or "binary" (0, 1)')
+                'Valid options: "pass_through", "hopfield" (-1, 1), or "binary" (0, 1)')
 
     return top_ks
 
