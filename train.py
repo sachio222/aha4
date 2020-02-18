@@ -8,8 +8,8 @@ Description: Training for model implemented from 2019 paper
              Learning" by Kowaldo, Ahmed and Rawlinson.
 
              Runs image through EC, DG / EC-->CA3, CA3, and CA1. This network
-             accept multiple, varied examples of an origin-sample, and
-             reconstruct the origin-sample, given multiple samples that vary
+             accepts multiple, varied examples of an original sample, and
+             reconstructs the original sample, given multiple samples that vary
              from the origin sample to different degrees.
 
              Pretraining was run on EC prior to running this model (see
@@ -41,7 +41,7 @@ from model import modules  # pylint: disable=no-name-in-module
 from utils import utils  # pylint: disable=RP0003, F0401
 
 # Clear terminal with ANSI <ESC> c "\033c"
-# print("\033c", end="") # Doesn't work on PC
+# print("\033c", end="") # (Doesn't fully clear screen on PC)
 print("\033[H\033[2J", end="")
 
 # Initialize paths to json parameters
@@ -82,7 +82,7 @@ def train(model,
 
         # Load weights
         utils.load_checkpoint(model_path, step1_ec, name="ectoca3_weights")
-        # utils.load_checkpoint(model_path, step5_ca1, name="ca1_weights")
+        utils.load_checkpoint(model_path, step5_ca1, name="ca1_weights")
 
         # Custom loader for ca3.
         ca3_weights_path = model_path / "ca3_weights.pth.tar"
@@ -97,10 +97,12 @@ def train(model,
                 x = x.cuda(non_blocking=True)
 
             #=============RUN EC=============#
+
             with torch.no_grad():
                 ec_maxpool_flat = step1_ec(x, 4)
 
             #=====MONITORING=====#
+
             # ec_out_weight = step1_ec.encoder.weight.data
             ## DISPLAY
             # utils.animate_weights(ec_out_weight, auto=False)
@@ -109,6 +111,7 @@ def train(model,
             #     print(out.shape)
             #     ec_grid = torchvision.utils.make_grid(out, nrow=11)
             #     utils.animate_weights(ec_grid, i)
+
             #=====END MONIT.=====#
 
             #=============END EC=============#
@@ -121,15 +124,17 @@ def train(model,
             # utils.showme(dg_sparse)
             # exit()
 
-            # Polarize output to (-1, 1) for step3_ca3
+            # Polarize output from (0, 1) to (-1, 1) for step3_ca3
             dg_sparse_dressed = modules.all_dressed(dg_sparse)
 
             ## DISPLAY 
             # utils.showme(dg_sparse_dressed)
             # exit()
+
             #=============END DENTATE GYRUS=============#
 
             #=============RUN CA3 TRAINING==============#
+
             if not train_mode:
                 pass
             else:
@@ -146,9 +151,11 @@ def train(model,
             ## DISPLAY
             # utils.showme(ca3_weights)
             # exit()
+
             #=============END CA3 TRAINING==============#
 
             #=============RUN EC->CA3===================#
+
             if not train_mode:
                 trained_sparse = step4_ectoca3(ec_maxpool_flat)
             else:
@@ -171,12 +178,13 @@ def train(model,
                                           name="ectoca3_weights",
                                           silent=False)
 
-            # Polarize output to (-1, 1) for step3_ca3
+            # Polarize output from (0, 1) to (-1, 1) for step3_ca3
             ectoca3_out_dressed = modules.all_dressed(trained_sparse)
 
             ## DISPLAY
             # utils.showme(ectoca3_out_dressed.detach())
             # exit()
+
             #=============END EC->CA3=================#
 
             #=============RUN CA3 RECALL==============#
@@ -190,6 +198,7 @@ def train(model,
             #=============END CA3 TRAINING==============#
 
             #=============RUN CA1 ======================#
+
             if not train_mode:
                 ca1_reconstruction = step5_ca1(ca3_out_recall2)
             else:
@@ -217,6 +226,7 @@ def train(model,
                                           model_path,
                                           name="ca1_weights",
                                           silent=False)
+
                 #=============END CA1 =============#
 
             # Optional exit to end after one batch
@@ -266,14 +276,18 @@ ca1_loss_fn = nn.MSELoss()
 ectoca3_optimizer = optim.Adam(step4_ectoca3.parameters(),
                                lr=params.ectoca3_learning_rate,
                                weight_decay=params.ectoca3_weight_decay)
+
 ca1_optimizer = optim.Adam(step5_ca1.parameters(),
                            lr=params.ca1_learning_rate,
                            weight_decay=params.ca1_weight_decay)
 
-# Get last trained weights. DISABLE if not wanted
+# Get pretrained weights. Comment out if not wanted.
 utils.load_checkpoint(pretrain_path, step1_ec, name="pre_train")
 
 # Start training
+# Train mode runs backprop and stores weights in the Hopfield net. 
+# Autosave over-writes existing weights if set to true.
+
 train(step1_ec,
       dataloader,
       ectoca3_optimizer,
