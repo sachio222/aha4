@@ -432,4 +432,4 @@ class CA3():
     def reset(self):
         """Resets weight matrix to 0.
         """
-        self.W = torch.zeros(dim1, dim1)
+        self.W = torch.zeros(self.dim1, self.dim1)
