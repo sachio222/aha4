@@ -99,7 +99,7 @@ def train(model,
             #=============RUN EC=============#
 
             with torch.no_grad():
-                ec_maxpool_flat = step1_ec(x, 4)
+                ec_maxpool_flat = step1_ec(x, k=4)
 
             #=====MONITORING=====#
 
@@ -118,7 +118,7 @@ def train(model,
 
             #=============RUN DENTATE GYRUS=============#
             with torch.no_grad():
-                dg_sparse = step2_dg(ec_maxpool_flat, 10)
+                dg_sparse = step2_dg(ec_maxpool_flat, k=10)
 
             ## DISPLAY 
             # utils.showme(dg_sparse)
