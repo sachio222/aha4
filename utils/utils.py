@@ -180,7 +180,7 @@ def showme(tnsr,
         print(tnsr.shape)
 
 
-def animate_weights(t, nrow=11, label=None, auto=True):
+def animate_weights(t, nrow=11, label=None, auto=False):
     """Animates weights during training. 
 
     Press ctrl + C in terminal to escape.
