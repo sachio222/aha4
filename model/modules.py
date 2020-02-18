@@ -95,7 +95,7 @@ def center_me_zero(x):
 
 
 def bipolarize(x):
-    """Note: If you numbers come back all ones, then all vals are positive"""
+    """Note: If your numbers come back all ones, then all vals are positive"""
     x = x.clone()
     x[x > 0.] = 1
     x[x < 1] = -1
