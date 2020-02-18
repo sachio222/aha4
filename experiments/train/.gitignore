@@ -1,0 +1,2 @@
+# ignore weights files
+*.pth.tar
