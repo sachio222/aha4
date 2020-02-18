@@ -183,7 +183,8 @@ def showme(tnsr,
 def animate_weights(t, nrow=11, label=None, auto=False):
     """Animates weights during training. 
 
-    Press ctrl + C in terminal to escape.
+    Press ctrl + C in terminal to escape. Change auto to True if you are 
+    running on a mac. It is pretty good. 
 
         Usage example:
             >>> animate_weights(conv1_weights, i)

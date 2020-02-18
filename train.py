@@ -102,6 +102,7 @@ def train(model,
 
             #=====MONITORING=====#
             # ec_out_weight = step1_ec.encoder.weight.data
+            ## DISPLAY
             # utils.animate_weights(ec_out_weight, auto=False)
 
             # for i, out in enumerate(ec_maxpool_flat):
@@ -116,12 +117,14 @@ def train(model,
             with torch.no_grad():
                 dg_sparse = step2_dg(ec_maxpool_flat, 10)
 
+            ## DISPLAY 
             # utils.showme(dg_sparse)
             # exit()
 
             # Polarize output to (-1, 1) for step3_ca3
             dg_sparse_dressed = modules.all_dressed(dg_sparse)
 
+            ## DISPLAY 
             # utils.showme(dg_sparse_dressed)
             # exit()
             #=============END DENTATE GYRUS=============#
@@ -139,6 +142,8 @@ def train(model,
                                           model_path,
                                           name="ca3_weights",
                                           silent=False)
+            
+            ## DISPLAY
             # utils.showme(ca3_weights)
             # exit()
             #=============END CA3 TRAINING==============#
@@ -169,6 +174,7 @@ def train(model,
             # Polarize output to (-1, 1) for step3_ca3
             ectoca3_out_dressed = modules.all_dressed(trained_sparse)
 
+            ## DISPLAY
             # utils.showme(ectoca3_out_dressed.detach())
             # exit()
             #=============END EC->CA3=================#
@@ -178,6 +184,7 @@ def train(model,
             ca3_out_recall = step3_ca3.update(ectoca3_out_dressed)
             ca3_out_recall2 = ca3_out_recall.clone()
 
+            ## DISPLAY
             # utils.showme(ca3_out_recall.detach())
 
             #=============END CA3 TRAINING==============#
@@ -199,6 +206,8 @@ def train(model,
 
                     print(i, ca1_loss)
                     ca1_optimizer.step()
+
+                    ## DISPLAY
                     utils.animate_weights(ca1_reconstruction.detach(), nrow=5)
 
                 if autosave:
@@ -209,6 +218,8 @@ def train(model,
                                           name="ca1_weights",
                                           silent=False)
                 #=============END CA1 =============#
+
+            # Optional exit to end after one batch
             exit()
 
 
@@ -252,8 +263,6 @@ step5_ca1 = modules.CA1(params.batch_size, 225, 2704, params.resize_dim)
 ectoca3_loss_fn = nn.BCELoss()
 ca1_loss_fn = nn.MSELoss()
 
-# loss_fn = nn.BCELoss()
-# optimizer = optim.Adam(EC_model.parameters(), lr=params.learning_rate)
 ectoca3_optimizer = optim.Adam(step4_ectoca3.parameters(),
                                lr=params.ectoca3_learning_rate,
                                weight_decay=params.ectoca3_weight_decay)
