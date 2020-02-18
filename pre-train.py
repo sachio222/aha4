@@ -72,7 +72,7 @@ def train(model, dataloader, optimizer, loss_fn, params, autosave=True):
                 if params.cuda:
                     x, _ = x.cuda(non_blocking=True)
 
-                y_pred = model(x, 1)
+                y_pred = model(x, k=1)
 
                 # Set loss comparison to input x
                 loss = loss_fn(y_pred, x)
