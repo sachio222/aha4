@@ -23,6 +23,8 @@ def get_top_k(x, k=10, mask_type="pass_through", topk_dim=0, scatter_dim=0):
         x: (tensor) input.
         k: (int) how many top k examples to return.
         mask_type: (string) Options: ['pass_through', 'hopfield', 'binary']
+        topk_dim: (int) Which axis do you want to grab topk over? ie. batch = 0
+        scatter_dim: (int) Make it the same as topk_dim to scatter the values
     """
 
     # Initialize zeros matrix
