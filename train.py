@@ -1,5 +1,5 @@
 """
-Title: pre-train.py
+Title: train.py
 Author: J. Krajewski
 Copyright: 2020
 License:
