@@ -188,7 +188,6 @@ def train(model,
                                           name="ectoca3_weights",
                                           silent=True)
 
-                print("EC_CA3 weights updated.\n")
             # Polarize output from (0, 1) to (-1, 1) for step3_ca3
             ectoca3_out_dressed = modules.all_dressed(trained_sparse)
 
@@ -244,8 +243,8 @@ def train(model,
                                           name="ca1_weights",
                                           silent=False)
                 
-                print("Graph cleared.")
-                print("CA1 weights successfully updated.\n")
+                print("Graph cleared.", end=" ")
+                print("Weights successfully updated.\n")
                 #=============END CA1 =============#
 
             # Optional exit to end after one batch
