@@ -234,8 +234,9 @@ class EC(nn.Module):
         # print(f"x size in ec is: {x.shape}")
         x = get_top_k(x, 4, mask_type="pass_through", topk_dim=0, scatter_dim=0)
         x = F.max_pool2d(x, 4, 3)
+        max_pool = x
         x = x.view(self.N, -1)
-        return x
+        return x, max_pool
 
 
 class ECPretrain(nn.Module):
@@ -294,10 +295,12 @@ class ECToCA3(nn.Module):
         super(ECToCA3, self).__init__()
 
         self.fc1 = nn.Linear(D_in, 800)
-        self.fc2 = nn.Linear(800, D_out)
+        self.fch = nn.Linear(800, 1200)
+        self.fc2 = nn.Linear(1200, D_out)
 
     def forward(self, x):
         x = F.leaky_relu(self.fc1(x), 0.1)
+        x = F.leaky_relu(self.fch(x), 0.1)
         x = torch.sigmoid(self.fc2(x))
         return x
 

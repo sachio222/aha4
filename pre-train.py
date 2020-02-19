@@ -82,7 +82,7 @@ def train(model, dataloader, optimizer, loss_fn, params, autosave=True):
 
                 #=====MONITORING=====#
                 enc_weights = model.encoder.weight.data
-                utils.animate_weights(enc_weights, i)
+                utils.animate_weights(enc_weights, label=i, auto=True)
                 #=====END MONIT.=====#
 
                 optimizer.step()
@@ -136,9 +136,9 @@ loss_fn = nn.BCELoss()
 optimizer = optim.Adam(model.parameters(), lr=params.learning_rate)
 
 # Get last trained weights. COMMENT OUT if not wanted
-utils.load_checkpoint(model_path, model, optimizer, name="pre_train")
+# utils.load_checkpoint(model_path, model, optimizer, name="pre_train")
 
 # Start training
-train(model, dataloader, optimizer, loss_fn, params, autosave=False)
+train(model, dataloader, optimizer, loss_fn, params, autosave=True)
 
 

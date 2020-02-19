@@ -1,7 +1,7 @@
 {
     "learning_rate": 3e-2,
     "batch_size": 64,
-    "num_epochs": 2,
+    "num_epochs": 1,
     "num_workers": 0,
     "resize_dim": 52
 }

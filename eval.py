@@ -74,7 +74,8 @@ def train(model,
           ca1_loss_fn,
           params,
           autosave=False,
-          train_mode=True):
+          train_mode=True,
+          display=False):
 
     # Set model to train or eval.
     if not train_mode:
@@ -102,18 +103,19 @@ def train(model,
             # entire dataloader is train set for eval. 
             x = dataloader
 
-            utils.animate_weights(x, nrow=5)
+            if display:
+                utils.animate_weights(x, nrow=5)
 
             with torch.no_grad():
-                ec_maxpool_flat = step1_ec(x, k=4)
+                ec_maxpool_flat, max_pool = step1_ec(x, k=4)
 
-            utils.animate_weights(step1_ec.encoder.weight.data, nrow=11)
-            # exit()
-
-            # for i, out in enumerate(ec_maxpool_flat):
-            #     print(out.shape)
-            #     ec_grid = torchvision.utils.make_grid(out, nrow=11)
-            #     utils.animate_weights(ec_grid, i, auto=True)
+            if display:
+                utils.animate_weights(step1_ec.encoder.weight.data, nrow=11)
+                # exit()
+     
+                for i, out in enumerate(max_pool):
+                    ec_grid = torchvision.utils.make_grid(out, nrow=11)
+                    utils.animate_weights(ec_grid, i, auto=True)
             #=====MONITORING=====#
 
             # ec_out_weight = step1_ec.encoder.weight.data
@@ -134,16 +136,18 @@ def train(model,
             with torch.no_grad():
                 dg_sparse = step2_dg(ec_maxpool_flat, k=10)
 
-            ## DISPLAY 
-            utils.showme(dg_sparse, title="DG OUT")
-            # exit()
+            ## DISPLAY
+            if display:
+                utils.showme(dg_sparse, title="DG OUT")
+                # exit()
 
             # Polarize output from (0, 1) to (-1, 1) for step3_ca3
             dg_sparse_dressed = modules.all_dressed(dg_sparse)
 
             ## DISPLAY 
-            utils.showme(dg_sparse_dressed, title="DG CLEAN")
-            # exit()
+            if display:
+                utils.showme(dg_sparse_dressed, title="DG CLEAN")
+                # exit()
 
             #=============END DENTATE GYRUS=============#
 
@@ -165,8 +169,9 @@ def train(model,
                 print("CA3 weights updated.")
             
             ## DISPLAY
-            utils.showme(ca3_weights, title="Weights")
-            # exit()
+            if display:
+                utils.showme(ca3_weights, title="Weights")
+                # exit()
             #=============END CA3 TRAINING==============#
 
             #=============RUN EC->CA3===================#
@@ -174,9 +179,16 @@ def train(model,
             if not train_mode:
                 trained_sparse = step4_ectoca3(ec_maxpool_flat)
 
+                torch.set_printoptions(profile="full")
+                print(f"dg_sparse: {dg_sparse[3]}")
+                print(f"trained: {trained_sparse[3]}")
+                print(f"trained: {trained_sparse[3].max()}")
+                torch.set_printoptions(profile="default")
+
                 ## DISPLAY
-                utils.showme(trained_sparse.detach(), title="Trained Prediction")
-                # exit()
+                if display:
+                    utils.showme(trained_sparse.detach(), title="Trained Prediction")
+                    # exit()
             else:
                 # Run training
                 loss_avg = utils.RunningAverage()
@@ -197,7 +209,8 @@ def train(model,
                         t1.update()
 
                         ## DISPLAY
-                        utils.animate_weights(trained_sparse.detach(), auto=True)
+                        if display:
+                            utils.animate_weights(trained_sparse.detach(), auto=True)
 
                 if autosave:
                     ec_state = utils.get_save_state(epoch, step4_ectoca3,
@@ -211,18 +224,21 @@ def train(model,
             ectoca3_out_dressed = modules.all_dressed(trained_sparse)
 
             ## DISPLAY
-            utils.showme(ectoca3_out_dressed.detach(), title="Cleaned-Trained")
-            # exit()
+            if display:
+                utils.showme(ectoca3_out_dressed.detach(), title="Cleaned-Trained")
+                # exit()
 
             #=============END EC->CA3=================#
 
             #=============RUN CA3 RECALL==============#
 
             ca3_out_recall = step3_ca3.update(ectoca3_out_dressed)
+            # ca3_out_recall = step3_ca3.update(dg_sparse_dressed)
 
             ## DISPLAY
-            utils.showme(ca3_out_recall.detach(), title="Hopfield out")
-            # exit()
+            if display:
+                utils.showme(ca3_out_recall.detach(), title="Hopfield out")
+                # exit()
 
             #=============END CA3 TRAINING==============#
 
@@ -255,7 +271,8 @@ def train(model,
                         t2.update()
 
                         ## DISPLAY
-                        utils.animate_weights(ca1_reconstruction.detach(), nrow=5, auto=True)
+                        if display:
+                            utils.animate_weights(ca1_reconstruction.detach(), nrow=5, auto=True)
 
                 if autosave:
                     ec_state = utils.get_save_state(epoch, step5_ca1,
@@ -297,7 +314,7 @@ idxs[0, 0] = 0
 
 
 for i, idx in enumerate(idxs[0]):
-    test_dataset.append(dataset[idx+1][0][0])
+    test_dataset.append(dataset[idx + 1][0][0])
     # utils.animate_weights(test_dataset[i], auto=True)
 
 dataloader = torch.stack(test_dataset)
@@ -350,5 +367,6 @@ train(step1_ec,
       ectoca3_loss_fn,
       ca1_loss_fn,
       params,
-      autosave=True,
-      train_mode=True)
+      autosave=False,
+      train_mode=False,
+      display=True)
