@@ -1,4 +1,4 @@
-# Ignore personal workspace
+# Ignore personal workspace, vscode, ds_store
 *.code-workspace
 /.vscode
 .DS_Store
