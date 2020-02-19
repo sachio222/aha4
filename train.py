@@ -128,7 +128,7 @@ def train(model,
             dg_sparse_dressed = modules.all_dressed(dg_sparse)
 
             ## DISPLAY 
-            utils.showme(dg_sparse_dressed)
+            # utils.showme(dg_sparse_dressed)
             # exit()
 
             #=============END DENTATE GYRUS=============#
@@ -178,7 +178,7 @@ def train(model,
                         t1.update()
 
                         ## DISPLAY
-                        # utils.animate_weights(trained_sparse.detach())
+                        utils.animate_weights(trained_sparse.detach(), auto=True)
 
                 if autosave:
                     ec_state = utils.get_save_state(epoch, step4_ectoca3,
@@ -186,13 +186,13 @@ def train(model,
                     utils.save_checkpoint(ec_state,
                                           model_path,
                                           name="ectoca3_weights",
-                                          silent=False)
+                                          silent=True)
 
             # Polarize output from (0, 1) to (-1, 1) for step3_ca3
             ectoca3_out_dressed = modules.all_dressed(trained_sparse)
 
             ## DISPLAY
-            utils.showme(ectoca3_out_dressed.detach())
+            # utils.showme(ectoca3_out_dressed.detach())
             # exit()
 
             #=============END EC->CA3=================#
@@ -202,7 +202,7 @@ def train(model,
             ca3_out_recall = step3_ca3.update(ectoca3_out_dressed)
 
             ## DISPLAY
-            utils.showme(ca3_out_recall.detach())
+            # utils.showme(ca3_out_recall.detach())
 
             #=============END CA3 TRAINING==============#
 
@@ -233,7 +233,7 @@ def train(model,
                         t2.update()
 
                         ## DISPLAY
-                        utils.animate_weights(ca1_reconstruction.detach(), nrow=5)
+                        utils.animate_weights(ca1_reconstruction.detach(), nrow=5, auto=True)
 
                 if autosave:
                     ec_state = utils.get_save_state(epoch, step5_ca1,
@@ -245,9 +245,6 @@ def train(model,
                 
                 print("Graph cleared.", end=" ")
                 print("Weights successfully updated.\n")
-            
-            utils.showme(ca1_reconstruction.detach(), 4)
-            
                 #=============END CA1 =============#
 
             # Optional exit to end after one batch
@@ -263,49 +260,6 @@ tsfm = transforms.Compose([
 
 # Import from torchvision.datasets Omniglot
 dataset = Omniglot(data_path, background=False, transform=tsfm, download=True)
-
-def create_test_set(dataset, dataloader, mode="train"):
-    """Creates control set"""
-
-    test_dataset = []
-
-    if mode=="test":
-        torch.manual_seed(333)
-        # Get batch_size random samples
-        idxs = torch.randint(len(dataset), (1, params.batch_size))
-        # Make sure one of them is our control.
-        idxs[0, 0] = 0
-
-        for i, idx in enumerate(idxs[0]):
-
-            test_dataset.append(dataset[idx][0][0])
-            test_dataset.append(torch.tensor(0.))
-
-            # utils.animate_weights(test_dataset[i], auto=True)
-
-        dataloader = DataLoader(test_dataset,
-                        params.batch_size,
-                        shuffle=False,
-                        num_workers=params.num_workers,
-                        drop_last=True)
-
-    elif mode=="recall":
-        dataset = dataset[1][0][0]
-        dataset.unsqueeze_(0)
-        print(dataset.shape)
-        exit()
-        # utils.showme(dataset, 4)
-
-        dataloader = DataLoader(dataset,
-                        1,
-                        shuffle=True,
-                        num_workers=params.num_workers,
-                        drop_last=True)
-        
-    elif mode=="train":
-        pass
-
-    return dataloader
 
 dataloader = DataLoader(dataset,
                         params.batch_size,
@@ -352,8 +306,6 @@ utils.load_checkpoint(pretrain_path, step1_ec, name="pre_train")
 # Train mode runs backprop and stores weights in the Hopfield net. 
 # Autosave over-writes existing weights if set to true.
 
-dataloader = create_test_set(dataset, dataloader, mode="test")
-
 train(step1_ec,
       dataloader,
       ectoca3_optimizer,
@@ -361,5 +313,5 @@ train(step1_ec,
       ectoca3_loss_fn,
       ca1_loss_fn,
       params,
-      autosave=True,
+      autosave=False,
       train_mode=True)
