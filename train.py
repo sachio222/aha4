@@ -151,7 +151,7 @@ def train(model,
             ## DISPLAY
             # utils.showme(ca3_weights)
             # exit()
-
+                print("CA3 weights updated.")
             #=============END CA3 TRAINING==============#
 
             #=============RUN EC->CA3===================#
@@ -160,17 +160,25 @@ def train(model,
                 trained_sparse = step4_ectoca3(ec_maxpool_flat)
             else:
                 # Run training
-                for i in range(params.ectoca3_iters):
-                    trained_sparse = step4_ectoca3(ec_maxpool_flat)
-                    ectoca3_loss = ectoca3_loss_fn(trained_sparse, dg_sparse)
-                    ectoca3_optimizer.zero_grad()
-                    ectoca3_loss.backward(retain_graph=True)
-                    print(i, ectoca3_loss)
-                    # NOTE: Learning rate has large impact on quality of output
-                    ectoca3_optimizer.step()
+                loss_avg = utils.RunningAverage()
 
+                with tqdm (desc="Training EC->CA3:", total=params.ectoca3_iters) as t1:
+                    for i in range(params.ectoca3_iters):
+                        trained_sparse = step4_ectoca3(ec_maxpool_flat)
+                        ectoca3_loss = ectoca3_loss_fn(trained_sparse, dg_sparse)
+                        ectoca3_optimizer.zero_grad()
+                        ectoca3_loss.backward(retain_graph=True)
+                        # print(i, ectoca3_loss)
+                        # NOTE: Learning rate has large impact on quality of output
+                        ectoca3_optimizer.step()
 
-                    utils.animate_weights(trained_sparse.detach())
+                        loss_avg.update(ectoca3_loss.item())
+
+                        t1.set_postfix(loss="{:05.3f}".format(loss_avg()))
+                        t1.update()
+
+                        ## DISPLAY
+                        # utils.animate_weights(trained_sparse.detach())
 
                 if autosave:
                     ec_state = utils.get_save_state(epoch, step4_ectoca3,
@@ -178,8 +186,9 @@ def train(model,
                     utils.save_checkpoint(ec_state,
                                           model_path,
                                           name="ectoca3_weights",
-                                          silent=False)
+                                          silent=True)
 
+                print("EC_CA3 weights updated.")
             # Polarize output from (0, 1) to (-1, 1) for step3_ca3
             ectoca3_out_dressed = modules.all_dressed(trained_sparse)
 
@@ -203,22 +212,30 @@ def train(model,
             if not train_mode:
                 ca1_reconstruction = step5_ca1(ca3_out_recall)
             else:
-                for i in range(params.ca1_iters):
-                    ca1_reconstruction = step5_ca1(ca3_out_recall)
-                    ca1_loss = ca1_loss_fn(ca1_reconstruction, x)
-                    ca1_optimizer.zero_grad()
+                loss_avg.reset()
 
-                    if i == (params.ca1_iters - 1):
-                        ca1_loss.backward(retain_graph=False)
-                        print("Graph cleared.\n")
-                    else:
-                        ca1_loss.backward(retain_graph=True)
+                with tqdm (desc="Training CA1:", total=params.ca1_iters) as t2:
+                    for i in range(params.ca1_iters):
+                        ca1_reconstruction = step5_ca1(ca3_out_recall)
+                        ca1_loss = ca1_loss_fn(ca1_reconstruction, x)
+                        ca1_optimizer.zero_grad()
 
-                    print(i, ca1_loss)
-                    ca1_optimizer.step()
+                        if i == (params.ca1_iters - 1):
+                            ca1_loss.backward(retain_graph=False)
+                            print("Graph cleared.\n")
+                        else:
+                            ca1_loss.backward(retain_graph=True)
 
-                    ## DISPLAY
-                    utils.animate_weights(ca1_reconstruction.detach(), nrow=5)
+                        # print(i, ca1_loss)
+                        ca1_optimizer.step()
+
+                        loss_avg.update(ca1_loss.item())
+
+                        t2.set_postfix(loss="{:05.3f}".format(loss_avg()))
+                        t2.update()
+
+                        ## DISPLAY
+                        # utils.animate_weights(ca1_reconstruction.detach(), nrow=5)
 
                 if autosave:
                     ec_state = utils.get_save_state(epoch, step5_ca1,
@@ -227,7 +244,7 @@ def train(model,
                                           model_path,
                                           name="ca1_weights",
                                           silent=False)
-
+                print("CA1 weights updated.")
                 #=============END CA1 =============#
 
             # Optional exit to end after one batch
