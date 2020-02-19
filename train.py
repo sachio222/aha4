@@ -162,7 +162,7 @@ def train(model,
                 # Run training
                 loss_avg = utils.RunningAverage()
 
-                with tqdm (desc="Training EC->CA3:", total=params.ectoca3_iters) as t1:
+                with tqdm (desc="Updating EC->CA3", total=params.ectoca3_iters) as t1:
                     for i in range(params.ectoca3_iters):
                         trained_sparse = step4_ectoca3(ec_maxpool_flat)
                         ectoca3_loss = ectoca3_loss_fn(trained_sparse, dg_sparse)
@@ -188,7 +188,7 @@ def train(model,
                                           name="ectoca3_weights",
                                           silent=True)
 
-                print("EC_CA3 weights updated.")
+                print("EC_CA3 weights updated.\n")
             # Polarize output from (0, 1) to (-1, 1) for step3_ca3
             ectoca3_out_dressed = modules.all_dressed(trained_sparse)
 
@@ -214,7 +214,7 @@ def train(model,
             else:
                 loss_avg.reset()
 
-                with tqdm (desc="Training CA1:", total=params.ca1_iters) as t2:
+                with tqdm (desc="Updating CA1", total=params.ca1_iters) as t2:
                     for i in range(params.ca1_iters):
                         ca1_reconstruction = step5_ca1(ca3_out_recall)
                         ca1_loss = ca1_loss_fn(ca1_reconstruction, x)
@@ -222,7 +222,6 @@ def train(model,
 
                         if i == (params.ca1_iters - 1):
                             ca1_loss.backward(retain_graph=False)
-                            print("Graph cleared.\n")
                         else:
                             ca1_loss.backward(retain_graph=True)
 
@@ -244,7 +243,9 @@ def train(model,
                                           model_path,
                                           name="ca1_weights",
                                           silent=False)
-                print("CA1 weights updated.")
+                
+                print("Graph cleared.")
+                print("CA1 weights successfully updated.\n")
                 #=============END CA1 =============#
 
             # Optional exit to end after one batch
