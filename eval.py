@@ -78,29 +78,42 @@ def train(model,
 
     # Set model to train or eval.
     if not train_mode:
+        print("Setting to eval mode.")
         model.eval()
 
         # Load weights
-        utils.load_checkpoint(model_path, step1_ec, name="ectoca3_weights")
+        utils.load_checkpoint(model_path, step4_ectoca3, name="ectoca3_weights")
         utils.load_checkpoint(model_path, step5_ca1, name="ca1_weights")
 
         # Custom loader for ca3.
         ca3_weights_path = model_path / "ca3_weights.pth.tar"
         ca3_weights = torch.load(ca3_weights_path.as_posix())
         step3_ca3.W = ca3_weights
+
     else:
         model.train()
 
     for epoch in range(params.num_epochs):
-        for i, (x, _) in enumerate(dataloader):
+        for i, x in enumerate(dataloader):
             if params.cuda:
                 x = x.cuda(non_blocking=True)
 
             #=============RUN EC=============#
+            # entire dataloader is train set for eval. 
+            x = dataloader
+
+            utils.animate_weights(x, nrow=5)
 
             with torch.no_grad():
                 ec_maxpool_flat = step1_ec(x, k=4)
 
+            utils.animate_weights(step1_ec.encoder.weight.data, nrow=11)
+            # exit()
+
+            # for i, out in enumerate(ec_maxpool_flat):
+            #     print(out.shape)
+            #     ec_grid = torchvision.utils.make_grid(out, nrow=11)
+            #     utils.animate_weights(ec_grid, i, auto=True)
             #=====MONITORING=====#
 
             # ec_out_weight = step1_ec.encoder.weight.data
@@ -117,18 +130,19 @@ def train(model,
             #=============END EC=============#
 
             #=============RUN DENTATE GYRUS=============#
+
             with torch.no_grad():
                 dg_sparse = step2_dg(ec_maxpool_flat, k=10)
 
             ## DISPLAY 
-            # utils.showme(dg_sparse)
+            utils.showme(dg_sparse, title="DG OUT")
             # exit()
 
             # Polarize output from (0, 1) to (-1, 1) for step3_ca3
             dg_sparse_dressed = modules.all_dressed(dg_sparse)
 
             ## DISPLAY 
-            utils.showme(dg_sparse_dressed)
+            utils.showme(dg_sparse_dressed, title="DG CLEAN")
             # exit()
 
             #=============END DENTATE GYRUS=============#
@@ -147,17 +161,22 @@ def train(model,
                                           model_path,
                                           name="ca3_weights",
                                           silent=False)
+                
+                print("CA3 weights updated.")
             
             ## DISPLAY
-            # utils.showme(ca3_weights)
+            utils.showme(ca3_weights, title="Weights")
             # exit()
-                print("CA3 weights updated.")
             #=============END CA3 TRAINING==============#
 
             #=============RUN EC->CA3===================#
 
             if not train_mode:
                 trained_sparse = step4_ectoca3(ec_maxpool_flat)
+
+                ## DISPLAY
+                utils.showme(trained_sparse.detach(), title="Trained Prediction")
+                # exit()
             else:
                 # Run training
                 loss_avg = utils.RunningAverage()
@@ -178,7 +197,7 @@ def train(model,
                         t1.update()
 
                         ## DISPLAY
-                        # utils.animate_weights(trained_sparse.detach())
+                        utils.animate_weights(trained_sparse.detach(), auto=True)
 
                 if autosave:
                     ec_state = utils.get_save_state(epoch, step4_ectoca3,
@@ -192,7 +211,7 @@ def train(model,
             ectoca3_out_dressed = modules.all_dressed(trained_sparse)
 
             ## DISPLAY
-            utils.showme(ectoca3_out_dressed.detach())
+            utils.showme(ectoca3_out_dressed.detach(), title="Cleaned-Trained")
             # exit()
 
             #=============END EC->CA3=================#
@@ -202,7 +221,8 @@ def train(model,
             ca3_out_recall = step3_ca3.update(ectoca3_out_dressed)
 
             ## DISPLAY
-            utils.showme(ca3_out_recall.detach())
+            utils.showme(ca3_out_recall.detach(), title="Hopfield out")
+            # exit()
 
             #=============END CA3 TRAINING==============#
 
@@ -210,6 +230,8 @@ def train(model,
 
             if not train_mode:
                 ca1_reconstruction = step5_ca1(ca3_out_recall)
+                utils.animate_weights(ca1_reconstruction.detach(), nrow=5, auto=False)
+                exit()
             else:
                 loss_avg.reset()
 
@@ -233,7 +255,7 @@ def train(model,
                         t2.update()
 
                         ## DISPLAY
-                        utils.animate_weights(ca1_reconstruction.detach(), nrow=5)
+                        utils.animate_weights(ca1_reconstruction.detach(), nrow=5, auto=True)
 
                 if autosave:
                     ec_state = utils.get_save_state(epoch, step5_ca1,
@@ -246,7 +268,8 @@ def train(model,
                 print("Graph cleared.", end=" ")
                 print("Weights successfully updated.\n")
             
-            utils.showme(ca1_reconstruction.detach(), 4)
+            ## DISPLAY
+            utils.animate_weights(ca1_reconstruction.detach(), nrow=5, auto=False)
             
                 #=============END CA1 =============#
 
@@ -264,54 +287,22 @@ tsfm = transforms.Compose([
 # Import from torchvision.datasets Omniglot
 dataset = Omniglot(data_path, background=False, transform=tsfm, download=True)
 
-def create_test_set(dataset, dataloader, mode="train"):
-    """Creates control set"""
+test_dataset = []
 
-    test_dataset = []
+torch.manual_seed(333)
+# Get batch_size random samples
+idxs = torch.randint(len(dataset), (1, params.batch_size))
+# Make sure one of them is our control.
+idxs[0, 0] = 0
 
-    if mode=="test":
-        torch.manual_seed(333)
-        # Get batch_size random samples
-        idxs = torch.randint(len(dataset), (1, params.batch_size))
-        # Make sure one of them is our control.
-        idxs[0, 0] = 0
 
-        for i, idx in enumerate(idxs[0]):
+for i, idx in enumerate(idxs[0]):
+    test_dataset.append(dataset[idx+1][0][0])
+    # utils.animate_weights(test_dataset[i], auto=True)
 
-            test_dataset.append(dataset[idx][0][0])
-            test_dataset.append(torch.tensor(0.))
-
-            # utils.animate_weights(test_dataset[i], auto=True)
-
-        dataloader = DataLoader(test_dataset,
-                        params.batch_size,
-                        shuffle=False,
-                        num_workers=params.num_workers,
-                        drop_last=True)
-
-    elif mode=="recall":
-        dataset = dataset[1][0][0]
-        dataset.unsqueeze_(0)
-        print(dataset.shape)
-        exit()
-        # utils.showme(dataset, 4)
-
-        dataloader = DataLoader(dataset,
-                        1,
-                        shuffle=True,
-                        num_workers=params.num_workers,
-                        drop_last=True)
-        
-    elif mode=="train":
-        pass
-
-    return dataloader
-
-dataloader = DataLoader(dataset,
-                        params.batch_size,
-                        shuffle=True,
-                        num_workers=params.num_workers,
-                        drop_last=True)
+dataloader = torch.stack(test_dataset)
+dataloader.unsqueeze_(1)
+print(dataloader.shape)
 
 #================BEGIN MODELS================#
 
@@ -351,8 +342,6 @@ utils.load_checkpoint(pretrain_path, step1_ec, name="pre_train")
 # Start training
 # Train mode runs backprop and stores weights in the Hopfield net. 
 # Autosave over-writes existing weights if set to true.
-
-dataloader = create_test_set(dataset, dataloader, mode="test")
 
 train(step1_ec,
       dataloader,

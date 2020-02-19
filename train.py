@@ -81,7 +81,7 @@ def train(model,
         model.eval()
 
         # Load weights
-        utils.load_checkpoint(model_path, step1_ec, name="ectoca3_weights")
+        utils.load_checkpoint(model_path, step4_ectoca3, name="ectoca3_weights")
         utils.load_checkpoint(model_path, step5_ca1, name="ca1_weights")
 
         # Custom loader for ca3.

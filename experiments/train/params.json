@@ -3,7 +3,7 @@
     "ca1_iters": 100,
     "ca1_learning_rate": 67e-4, 
     "ca1_weight_decay": 1e-4,
-    "ectoca3_iters": 50,
+    "ectoca3_iters": 40,
     "ectoca3_learning_rate": 7e-5,
     "ectoca3_weight_decay": 25e-6,
     "num_epochs": 1,
