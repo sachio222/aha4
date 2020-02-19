@@ -93,6 +93,8 @@ def train(model,
 
     for epoch in range(params.num_epochs):
         for i, (x, _) in enumerate(dataloader):
+            utils.showme(x[2][0][1:], 4)
+            exit()
             if params.cuda:
                 x = x.cuda(non_blocking=True)
 
