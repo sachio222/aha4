@@ -221,7 +221,7 @@ def train(dataloader,
 
                         ## DISPLAY
                         if display:
-                            utils.animate_weights(trained_sparse.detach(), auto=True)
+                            utils.animate_weights(trained_sparse.detach(), auto=False)
 
                 if autosave:
                     ec_state = utils.get_save_state(epoch, step4_ectoca3,
@@ -288,7 +288,7 @@ def train(dataloader,
 
                         ## DISPLAY
                         if display:
-                            utils.animate_weights(ca1_reconstruction.detach(), nrow=5, auto=True)
+                            utils.animate_weights(ca1_reconstruction.detach(), nrow=5, auto=False)
 
                 if autosave:
                     ec_state = utils.get_save_state(epoch, step5_ca1,
@@ -330,7 +330,7 @@ idxs[0, 0] = 0
 
 
 for i, idx in enumerate(idxs[0]):
-    test_dataset.append(dataset[idx + 0][0][0])
+    test_dataset.append(dataset[idx + 1][0][0])
     # utils.animate_weights(test_dataset[i], auto=True)
 
 dataloader = torch.stack(test_dataset)
