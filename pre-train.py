@@ -83,7 +83,7 @@ def train(model, dataloader, optimizer, loss_fn, params, autosave=True):
                 #=====MONITORING=====#
 
                 enc_weights = model.encoder.weight.data
-                # utils.animate_weights(enc_weights, label=i, auto=True)
+                utils.animate_weights(enc_weights, label=i, auto=True)
                 # for s in range(len(x)):
                 #     utils.animate_weights(y_pred[s].detach(), label=i, auto=True)
                 
@@ -93,11 +93,11 @@ def train(model, dataloader, optimizer, loss_fn, params, autosave=True):
                 loss_avg.update(loss.item())
 
                 # Update tqdm progress bar.
-                t.set_postfix(loss="{:05.3f}".format(loss_avg()))
+                t.set_postfix(loss="{:05.8f}".format(loss_avg()))
                 t.update()
 
             # Show one last time
-            utils.animate_weights(enc_weights, auto=False)
+            # utils.animate_weights(enc_weights, auto=False)
 
         if autosave:
             # Autosaves latest state after each epoch (overwrites previous state)
@@ -107,9 +107,9 @@ def train(model, dataloader, optimizer, loss_fn, params, autosave=True):
                                   name="pre_train",
                                   silent=False)
 
-    # grid_img = torchvision.utils.make_grid(y_pred, nrow=8)
-    # plt.imshow(grid_img.detach().numpy()[0])
-    # plt.show()
+        # grid_img = torchvision.utils.make_grid(y_pred, nrow=8)
+        # plt.imshow(grid_img.detach().numpy()[0])
+        # plt.show()
 
 # Define transforms
 tsfm = transforms.Compose([
@@ -139,7 +139,7 @@ loss_fn = nn.BCELoss()
 optimizer = optim.Adam(model.parameters(), lr=params.learning_rate)
 
 # Get last trained weights. COMMENT OUT if not wanted
-# utils.load_checkpoint(model_path, model, optimizer, name="pre_train")
+utils.load_checkpoint(model_path, model, optimizer, name="pre_train")
 
 # Start training
 train(model, dataloader, optimizer, loss_fn, params, autosave=True)

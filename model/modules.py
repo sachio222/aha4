@@ -222,6 +222,9 @@ class EC(nn.Module):
                                  kernel_size=KERNEL_SIZE,
                                  stride=STRIDE,
                                  padding=PADDING)
+
+        self.decoder = nn.ConvTranspose2d(D_out, D_in, KERNEL_SIZE, STRIDE,
+                                          PADDING)
         self.N = N
 
     def forward(self, x, k):
@@ -231,9 +234,8 @@ class EC(nn.Module):
         """
 
         x = self.encoder(x)
-        x = get_top_k(x, 4, mask_type="pass_through", topk_dim=0, scatter_dim=0)
-        # x = get_top_k(x, 4, mask_type="pass_through", topk_dim=1, scatter_dim=1)
-        
+        x = get_top_k(x, k, topk_dim=0, scatter_dim=0)
+
         x = F.max_pool2d(x, 4, 4)
         x = x.view(self.N, -1)
         return x
@@ -267,7 +269,7 @@ class ECPretrain(nn.Module):
                                  kernel_size=KERNEL_SIZE,
                                  stride=STRIDE,
                                  padding=PADDING)
-        # self.decoder = nn.Conv2d(D_out, 1, kernel_size=1, stride=1, padding=0)
+
         nn.init.xavier_uniform_(self.encoder.weight)
 
         self.decoder = nn.ConvTranspose2d(D_out, D_in, KERNEL_SIZE, STRIDE,
@@ -280,13 +282,14 @@ class ECPretrain(nn.Module):
         """
 
         x = self.encoder(x)  # Size: [64, 121, 10, 10}
-        # Squeezes each character into a single pixel
 
-        x = get_top_k(x, k, topk_dim=0, scatter_dim=0)
-        x = get_top_k(x, k, topk_dim=1, scatter_dim=1) 
+        # Squeezes each character into a single pixel
+        x = get_top_k(x, 1, topk_dim=0, scatter_dim=0)
         # Size: [64, 121, 10, 10]
-        # x = F.interpolate(x, 52, mode="nearest")
+
+
         x = self.decoder(x)  # Desired size: [64, 1, 52, 52]
+
         return torch.sigmoid(x)
 
 
@@ -298,7 +301,7 @@ class ECToCA3(nn.Module):
         self.fc2 = nn.Linear(800, D_out)
 
     def forward(self, x):
-        x = F.leaky_relu(self.fc1(x), 0.1)
+        x = F.leaky_relu(self.fc1(x), 0.1618)
         x = torch.sigmoid(self.fc2(x))
         return x
 

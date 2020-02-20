@@ -108,7 +108,7 @@ def train(dataloader,
 
             if display:
                 pass
-                # utils.animate_weights(x, nrow=5)
+                utils.animate_weights(x, nrow=5)
 
             with torch.no_grad():
                 ec_maxpool_flat = step1_ec(x, k=4)
@@ -117,7 +117,7 @@ def train(dataloader,
                 utils.animate_weights(step1_ec.encoder.weight.data, nrow=11)
                 # exit()
      
-                # for i, out in enumerate(max_pool):
+                # for i, out in enumerate(ec_maxpool_flat):
                 #     ec_grid = torchvision.utils.make_grid(out, nrow=11)
                 #     utils.animate_weights(ec_grid, i, auto=True)
             #=====MONITORING=====#
@@ -134,6 +134,8 @@ def train(dataloader,
             #=====END MONIT.=====#
 
             #=============END EC=============#
+
+
 
             #=============RUN DENTATE GYRUS=============#
 
@@ -154,6 +156,8 @@ def train(dataloader,
                 # exit()
 
             #=============END DENTATE GYRUS=============#
+
+
 
             #=============RUN CA3 TRAINING==============#
 
@@ -178,16 +182,19 @@ def train(dataloader,
                 # exit()
             #=============END CA3 TRAINING==============#
 
+
+
             #=============RUN EC->CA3===================#
 
             if not train_mode:
                 trained_sparse = step4_ectoca3(ec_maxpool_flat)
+                trained_sparse = modules.get_top_k(trained_sparse, k=10, topk_dim=1, scatter_dim=1)
 
-                torch.set_printoptions(profile="full")
-                print(f"dg_sparse: {dg_sparse[3]}")
-                print(f"trained: {trained_sparse[3]}")
-                print(f"trained: {trained_sparse[3].max()}")
-                torch.set_printoptions(profile="default")
+                # torch.set_printoptions(profile="full")
+                # print(f"dg_sparse: {dg_sparse[3]}")
+                # print(f"trained: {trained_sparse[3]}")
+                # print(f"trained: {trained_sparse[3].max()}")
+                # torch.set_printoptions(profile="default")
 
                 ## DISPLAY
                 if display:
@@ -225,8 +232,8 @@ def train(dataloader,
                                           silent=False)
 
             # Polarize output from (0, 1) to (-1, 1) for step3_ca3
-            ectoca3_out_dressed = modules.center_me_zero(trained_sparse)
-            ectoca3_out_dressed = modules.bipolarize(ectoca3_out_dressed, 0.2)
+            # ectoca3_out_dressed = modules.center_me_zero(trained_sparse)
+            ectoca3_out_dressed = modules.all_dressed(trained_sparse)
 
             ## DISPLAY
             if display:
@@ -234,6 +241,8 @@ def train(dataloader,
                 # exit()
 
             #=============END EC->CA3=================#
+
+
 
             #=============RUN CA3 RECALL==============#
 
@@ -246,6 +255,8 @@ def train(dataloader,
                 # exit()
 
             #=============END CA3 TRAINING==============#
+
+
 
             #=============RUN CA1 ======================#
 
@@ -334,13 +345,13 @@ step1_ec = modules.EC(params.batch_size,
                       D_out=121,
                       KERNEL_SIZE=9,
                       STRIDE=1,
-                      PADDING=1)
+                      PADDING=4)
 
-step2_dg = modules.DG(params.batch_size, 14641, 225)
+step2_dg = modules.DG(params.batch_size, 20449, 225)
 
 step3_ca3 = modules.CA3(225)
 
-step4_ectoca3 = modules.ECToCA3(14641, 225)
+step4_ectoca3 = modules.ECToCA3(20449, 225)
 
 step5_ca1 = modules.CA1(params.batch_size, 225, 2704, params.resize_dim)
 
