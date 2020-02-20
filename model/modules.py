@@ -94,10 +94,10 @@ def center_me_zero(x):
     return x
 
 
-def bipolarize(x):
+def bipolarize(x, threshold=0):
     """Note: If your numbers come back all ones, then all vals are positive"""
     x = x.clone()
-    x[x > 0.] = 1
+    x[x > threshold] = 1
     x[x < 1] = -1
     return x
 
@@ -284,7 +284,8 @@ class ECPretrain(nn.Module):
         x = self.encoder(x)  # Size: [64, 121, 10, 10}
         # Squeezes each character into a single pixel
 
-        x = get_top_k(x, k, topk_dim=1, scatter_dim=1) 
+        x = get_top_k(x, k, topk_dim=0, scatter_dim=0)
+        x = get_top_k(x, 10, topk_dim=1, scatter_dim=1) 
         # Size: [64, 121, 10, 10]
         # x = F.interpolate(x, 52, mode="nearest")
         x = self.decoder(x)  # Desired size: [64, 1, 52, 52]

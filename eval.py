@@ -157,7 +157,7 @@ def train(model,
                 pass
             else:
                 with torch.no_grad():
-                    ca3_weights = step3_ca3.train(dg_sparse_dressed)
+                    ca3_weights = step3_ca3.train(dg_sparse_dressed, "pinverse")
 
                 if autosave:
                     ca3_state = step3_ca3.W
@@ -221,7 +221,8 @@ def train(model,
                                           silent=False)
 
             # Polarize output from (0, 1) to (-1, 1) for step3_ca3
-            ectoca3_out_dressed = modules.all_dressed(trained_sparse)
+            ectoca3_out_dressed = modules.center_me_zero(trained_sparse)
+            ectoca3_out_dressed = modules.bipolarize(ectoca3_out_dressed, 0.2)
 
             ## DISPLAY
             if display:
@@ -314,12 +315,12 @@ idxs[0, 0] = 0
 
 
 for i, idx in enumerate(idxs[0]):
-    test_dataset.append(dataset[idx + 1][0][0])
+    test_dataset.append(dataset[idx + 0][0][0])
     # utils.animate_weights(test_dataset[i], auto=True)
 
 dataloader = torch.stack(test_dataset)
 dataloader.unsqueeze_(1)
-print(dataloader.shape)
+# print(dataloader.shape)
 
 #================BEGIN MODELS================#
 
@@ -331,11 +332,11 @@ step1_ec = modules.EC(params.batch_size,
                       STRIDE=1,
                       PADDING=1)
 
-step2_dg = modules.DG(params.batch_size, 27225, 225)
+step2_dg = modules.DG(params.batch_size, 14641, 225)
 
 step3_ca3 = modules.CA3(225)
 
-step4_ectoca3 = modules.ECToCA3(27225, 225)
+step4_ectoca3 = modules.ECToCA3(14641, 225)
 
 step5_ca1 = modules.CA1(params.batch_size, 225, 2704, params.resize_dim)
 
@@ -368,5 +369,5 @@ train(step1_ec,
       ca1_loss_fn,
       params,
       autosave=True,
-      train_mode=True,
+      train_mode=False,
       display=True)
