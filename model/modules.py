@@ -231,10 +231,8 @@ class EC(nn.Module):
         """
 
         x = self.encoder(x)
-        # print(x.shape)
-        # exit()
-        # print(f"x size in ec is: {x.shape}")
         x = get_top_k(x, 4, mask_type="pass_through", topk_dim=0, scatter_dim=0)
+        # x = get_top_k(x, 4, mask_type="pass_through", topk_dim=1, scatter_dim=1)
         
         x = F.max_pool2d(x, 4, 4)
         x = x.view(self.N, -1)
@@ -285,7 +283,7 @@ class ECPretrain(nn.Module):
         # Squeezes each character into a single pixel
 
         x = get_top_k(x, k, topk_dim=0, scatter_dim=0)
-        x = get_top_k(x, 10, topk_dim=1, scatter_dim=1) 
+        x = get_top_k(x, k, topk_dim=1, scatter_dim=1) 
         # Size: [64, 121, 10, 10]
         # x = F.interpolate(x, 52, mode="nearest")
         x = self.decoder(x)  # Desired size: [64, 1, 52, 52]

@@ -132,6 +132,7 @@ def load_checkpoint(checkpoint, model, optimizer=None, name="last"):
     checkpoint = torch.load(str(filepath))
 
     print("Found.")
+
     model.load_state_dict(checkpoint.get("state_dict"), strict=False)
 
     if optimizer:

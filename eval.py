@@ -66,8 +66,7 @@ if params.cuda:
     params.num_workers = 2
 
 
-def train(model,
-          dataloader,
+def train(dataloader,
           ectoca3_optimizer,
           ca1_optimizer,
           ectoca3_loss_fn,
@@ -80,7 +79,9 @@ def train(model,
     # Set model to train or eval.
     if not train_mode:
         print("Setting to eval mode.")
-        model.eval()
+        step1_ec.eval()
+        step4_ectoca3.eval()
+        step5_ca1.eval()
 
         # Load weights
         utils.load_checkpoint(model_path, step4_ectoca3, name="ectoca3_weights")
@@ -92,7 +93,9 @@ def train(model,
         step3_ca3.W = ca3_weights
 
     else:
-        model.train()
+        step1_ec.train()
+        step4_ectoca3.train()
+        step5_ca1.train()
 
     for epoch in range(params.num_epochs):
         for i, x in enumerate(dataloader):
@@ -104,7 +107,8 @@ def train(model,
             x = dataloader
 
             if display:
-                utils.animate_weights(x, nrow=5)
+                pass
+                # utils.animate_weights(x, nrow=5)
 
             with torch.no_grad():
                 ec_maxpool_flat = step1_ec(x, k=4)
@@ -361,13 +365,12 @@ utils.load_checkpoint(pretrain_path, step1_ec, name="pre_train")
 # Train mode runs backprop and stores weights in the Hopfield net. 
 # Autosave over-writes existing weights if set to true.
 
-train(step1_ec,
-      dataloader,
+train(dataloader,
       ectoca3_optimizer,
       ca1_optimizer,
       ectoca3_loss_fn,
       ca1_loss_fn,
       params,
       autosave=True,
-      train_mode=True,
+      train_mode=False,
       display=True)

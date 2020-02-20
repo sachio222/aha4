@@ -82,7 +82,7 @@ def train(model, dataloader, optimizer, loss_fn, params, autosave=True):
 
                 #=====MONITORING=====#
 
-                enc_weights = model.decoder.weight.data
+                enc_weights = model.encoder.weight.data
                 # utils.animate_weights(enc_weights, label=i, auto=True)
                 # for s in range(len(x)):
                 #     utils.animate_weights(y_pred[s].detach(), label=i, auto=True)
