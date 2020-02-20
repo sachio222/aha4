@@ -369,5 +369,5 @@ train(step1_ec,
       ca1_loss_fn,
       params,
       autosave=True,
-      train_mode=False,
+      train_mode=True,
       display=True)

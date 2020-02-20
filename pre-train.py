@@ -107,9 +107,9 @@ def train(model, dataloader, optimizer, loss_fn, params, autosave=True):
                                   name="pre_train",
                                   silent=False)
 
-    grid_img = torchvision.utils.make_grid(y_pred, nrow=8)
-    plt.imshow(grid_img.detach().numpy()[0])
-    plt.show()
+    # grid_img = torchvision.utils.make_grid(y_pred, nrow=8)
+    # plt.imshow(grid_img.detach().numpy()[0])
+    # plt.show()
 
 # Define transforms
 tsfm = transforms.Compose([
