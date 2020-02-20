@@ -69,7 +69,7 @@ def train(model, dataloader, optimizer, loss_fn, params, autosave=True):
 
         with tqdm(desc=desc, total=len(dataloader)) as t:
             for i, (x, _) in enumerate(dataloader):
-                if params.cuda:
+                if params. cuda:
                     x, _ = x.cuda(non_blocking=True)
 
                 y_pred = model(x, k=1)
@@ -79,11 +79,11 @@ def train(model, dataloader, optimizer, loss_fn, params, autosave=True):
 
                 optimizer.zero_grad()
                 loss.backward()
-
+ 
                 #=====MONITORING=====#
 
                 enc_weights = model.encoder.weight.data
-                utils.animate_weights(enc_weights, label=i, auto=False)
+                # utils.animate_weights(enc_weights, label=i, auto=False)
                 # for s in range(len(x)):
                 #     utils.animate_weights(y_pred[s].detach(), label=i, auto=True)
                 
