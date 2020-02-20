@@ -193,5 +193,5 @@ def animate_weights(t, nrow=11, label=None, auto=False):
         plt.show(block=True)
     else:
         plt.show(block=False)
-        plt.pause(0.001)
+        plt.pause(0.0001)
         plt.close()

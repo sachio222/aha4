@@ -107,15 +107,15 @@ def train(model,
                 utils.animate_weights(x, nrow=5)
 
             with torch.no_grad():
-                ec_maxpool_flat, max_pool = step1_ec(x, k=4)
+                ec_maxpool_flat = step1_ec(x, k=4)
 
             if display:
                 utils.animate_weights(step1_ec.encoder.weight.data, nrow=11)
                 # exit()
      
-                for i, out in enumerate(max_pool):
-                    ec_grid = torchvision.utils.make_grid(out, nrow=11)
-                    utils.animate_weights(ec_grid, i, auto=True)
+                # for i, out in enumerate(max_pool):
+                #     ec_grid = torchvision.utils.make_grid(out, nrow=11)
+                #     utils.animate_weights(ec_grid, i, auto=True)
             #=====MONITORING=====#
 
             # ec_out_weight = step1_ec.encoder.weight.data
@@ -367,6 +367,6 @@ train(step1_ec,
       ectoca3_loss_fn,
       ca1_loss_fn,
       params,
-      autosave=False,
-      train_mode=False,
+      autosave=True,
+      train_mode=True,
       display=True)

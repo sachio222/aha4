@@ -275,7 +275,7 @@ step1_ec = modules.EC(params.batch_size,
                       D_out=121,
                       KERNEL_SIZE=9,
                       STRIDE=1,
-                      PADDING=1)
+                      PADDING=4)
 
 step2_dg = modules.DG(params.batch_size, 27225, 225)
 
@@ -314,4 +314,4 @@ train(step1_ec,
       ca1_loss_fn,
       params,
       autosave=False,
-      train_mode=True)
+      train_mode=False)
