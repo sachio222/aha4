@@ -11,30 +11,13 @@ Use Pipenv to install dependencies and create compatible virtual environment. (h
 
 ### Installing
 
-A step by step series of examples that tell you how to get a development env running
+1. run /eval.py
+2. Save training set image.
+3. run /test.py
+4. Save test set image, save predictions image.
 
-Say what the step will be
-
-```
-Give the example
-```
-
-And repeat
-
-```
-until finished
-```
-
-End with an example of getting some data out of the system or using it for a little demo
-
-
-### Break down into end to end tests
-
-Explain what these tests test and why
-
-```
-Give an example
-```
+In /experiments/train/params.json:
+ - modify test_seed or test_shift values to change the test set variations.
 
 
 ## Built With
