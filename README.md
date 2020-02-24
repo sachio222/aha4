@@ -1,4 +1,6 @@
-# Artificial Hippocampal Algorithm in Pytorch.
+# Artificial Hippocampal Algorithm in Pytorch
+
+ATTN: This is a work in progress.
 
 Pytorch implementation of AHA! an ‘Artificial Hippocampal Algorithm’ for Episodic Machine Learning by Kowadlo, Rawlinson and Ahmed (2019). 
 
