@@ -1,4 +1,4 @@
-# Project Title
+# Artificial Hippocampal Algorithm in Pytorch.
 
 Pytorch implementation of AHA! an ‘Artificial Hippocampal Algorithm’ for Episodic Machine Learning by Kowadlo, Rawlinson and Ahmed (2019). 
 
