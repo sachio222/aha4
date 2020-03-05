@@ -1,10 +1,10 @@
 {
     "batch_size": 20,
-    "ca1_iters": 120,
+    "ca1_iters": 80,
     "ca1_learning_rate": 67e-4, 
     "ca1_weight_decay": 1e-4,
 
-    "ectoca3_iters": 60,
+    "ectoca3_iters": 70,
     "ectoca3_learning_rate": 7e-5,
     "ectoca3_weight_decay": 25e-6,
 
