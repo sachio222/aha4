@@ -11,7 +11,8 @@ Use Pipenv to install dependencies and create compatible virtual environment. (h
  - Requires Python version >= 3.6
 
 
-### Installing
+### Running
+Weights should already be trained for the VC module, so to run predictions, do the following:
 
 1. run /eval.py
 2. Save training set image.
