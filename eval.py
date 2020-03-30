@@ -49,11 +49,13 @@ data_path = Path().absolute() / "data"
 model_path = Path().absolute() / "experiments/train/"
 pretrain_path = Path().absolute() / "experiments/pretrain/"
 json_path = model_path / "params.json"
+json_path_pretrain = pretrain_path / "params.json"
 
 # Load params json
 assert json_path.is_file(
 ), f"\n\nERROR: No params.json file found at {json_path}\n"
 params = utils.Params(json_path)
+pretrain_params = utils.Params(json_path_pretrain)
 
 # If GPU, write to params file
 params.cuda = torch.cuda.is_available()
@@ -370,7 +372,7 @@ ca1_optimizer = optim.Adam(step5_ca1.parameters(),
                            weight_decay=params.ca1_weight_decay)
 
 # Get pretrained weights. Comment out if not wanted.
-utils.load_checkpoint(pretrain_path, step1_ec, name="pre_train")
+utils.load_checkpoint(pretrain_path, step1_ec, name=f"pre_train_{pretrain_params.batch_size}")
 
 # Start training
 # Train mode runs backprop and stores weights in the Hopfield net. 

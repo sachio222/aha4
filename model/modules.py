@@ -270,10 +270,11 @@ class ECPretrain(nn.Module):
                                  stride=STRIDE,
                                  padding=PADDING)
 
-        nn.init.xavier_uniform_(self.encoder.weight)
-
         self.decoder = nn.ConvTranspose2d(D_out, D_in, KERNEL_SIZE, STRIDE,
                                           PADDING)
+
+        nn.init.xavier_uniform_(self.encoder.weight)
+        nn.init.xavier_uniform_(self.decoder.weight)
 
     def forward(self, x, k):
         """

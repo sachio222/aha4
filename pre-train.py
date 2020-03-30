@@ -72,7 +72,7 @@ def train(model, dataloader, optimizer, loss_fn, params, autosave=True):
                 if params. cuda:
                     x, _ = x.cuda(non_blocking=True)
 
-                y_pred = model(x, k=1) 
+                y_pred = model(x, k=4) 
 
                 # Set loss comparison to input x
                 loss = loss_fn(y_pred, x)
@@ -104,7 +104,7 @@ def train(model, dataloader, optimizer, loss_fn, params, autosave=True):
             state = utils.get_save_state(epoch, model, optimizer)
             utils.save_checkpoint(state,
                                   model_path,
-                                  name="pre_train",
+                                  name=f"pre_train_{params.batch_size}",
                                   silent=False)
 
         # grid_img = torchvision.utils.make_grid(y_pred, nrow=8)
@@ -120,7 +120,6 @@ tsfm = transforms.Compose([
 
 # Import from torchvision.datasets Omniglot
 dataset = Omniglot(data_path, background=True, transform=tsfm, download=True)
-
 dataloader = DataLoader(dataset,
                         params.batch_size,
                         shuffle=True,
@@ -139,9 +138,10 @@ loss_fn = nn.BCELoss()
 optimizer = optim.Adam(model.parameters(), lr=params.learning_rate)
 
 # Get last trained weights. COMMENT OUT if not wanted
-utils.load_checkpoint(model_path, model, optimizer, name="pre_train")
+utils.load_checkpoint(model_path, model, optimizer, name=f"pre_train_{params.batch_size}")
 
 # Start training
 train(model, dataloader, optimizer, loss_fn, params, autosave=True)
+
 
 
