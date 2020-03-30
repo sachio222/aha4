@@ -138,7 +138,7 @@ loss_fn = nn.BCELoss()
 optimizer = optim.Adam(model.parameters(), lr=params.learning_rate)
 
 # Get last trained weights. COMMENT OUT if not wanted
-utils.load_checkpoint(model_path, model, optimizer, name=f"pre_train_{params.batch_size}")
+# utils.load_checkpoint(model_path, model, optimizer, name=f"pre_train_{params.batch_size}")
 
 # Start training
 train(model, dataloader, optimizer, loss_fn, params, autosave=True)
