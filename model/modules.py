@@ -154,7 +154,7 @@ class InhibitionMask():
 class CA1(nn.Module):
     """Reconstructs the inputs that originated from EC network.
 
-    Consists of 2 fully connected layers, recieving inputs from CA3
+    Consists of 2 fully connected layers, receiving inputs from CA3
     and outputs to EC. 
     """
 
@@ -244,7 +244,7 @@ class EC(nn.Module):
 class ECPretrain(nn.Module):
     """Pre-training... conducted on background split.
 
-    Sparse convolutional autoencoder, develops filters that detecct a set of
+    Sparse convolutional autoencoder, develops filters that detect a set of
             primitive visual concepts that consist of straight and curved edges, sometimes with junctions.
 
     Alphabets: 20
@@ -281,6 +281,10 @@ class ECPretrain(nn.Module):
         Todo:
             Insert hooks
         """
+
+        # GK: Here, there is a sparsity of 1 over the batch, that is called lifetime sparsity
+        # GK: In addition, we computed a sparsity (k=4) across the kernels for each kernel position (dim = 1)
+        # GK: k is ignored (I am guessing it used to be passed into get_top_k, and therefore you were using other values of k
 
         x = self.encoder(x)  # Size: [64, 121, 10, 10}
 

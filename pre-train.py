@@ -72,7 +72,8 @@ def train(model, dataloader, optimizer, loss_fn, params, autosave=True):
                 if params. cuda:
                     x, _ = x.cuda(non_blocking=True)
 
-                y_pred = model(x, k=4) 
+                # GK note that currently k is ignored y model
+                y_pred = model(x, k=4)    # GK does this call forward() ?
 
                 # Set loss comparison to input x
                 loss = loss_fn(y_pred, x)
@@ -132,6 +133,8 @@ model = modules.ECPretrain(D_in=1,
                            KERNEL_SIZE=9,
                            STRIDE=5,
                            PADDING=1)
+
+# GK:  BCELoss may work better, but FYI we used mse (more tested for topk sparse mode), which is probably better suited to unbounded values (i.e. linear rather than sigmoid activation function)
 
 # Set loss_fn to Binary cross entropy for Autoencoder.
 loss_fn = nn.BCELoss()

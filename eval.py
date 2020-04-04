@@ -95,7 +95,7 @@ def train(dataloader,
         step3_ca3.W = ca3_weights
 
     else:
-        step1_ec.train()
+        step1_ec.train()          # GK: can i confirm that this is not actually training, just doing a forward pass?
         step4_ectoca3.train()
         step5_ca1.train()
 
@@ -162,6 +162,10 @@ def train(dataloader,
 
 
             #=============RUN CA3 TRAINING==============#
+
+
+            # GK: this needs to do multiple training iterations with the same DG input (as does EC-CA3)
+            # GK: is that the case here?
 
             if not train_mode:
                 pass
@@ -341,7 +345,7 @@ dataloader.unsqueeze_(1)
 
 #================BEGIN MODELS================#
 
-# Initialize layers with parmeters.
+# Initialize layers with parameters.
 step1_ec = modules.EC(params.batch_size,
                       D_in=1,
                       D_out=121,
