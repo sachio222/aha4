@@ -102,6 +102,9 @@ def train(dataloader,
 
     for epoch in range(params.num_epochs):
         for i, x in enumerate(dataloader):
+
+            batch_accuracies = {}
+
             if params.cuda:
                 x = x.cuda(non_blocking=True)
 
@@ -135,6 +138,11 @@ def train(dataloader,
             #     utils.animate_weights(ec_grid, i)
 
             #=====END MONIT.=====#
+
+            study_output = ec_maxpool_flat  # TODO: we need the outputs at the time of 'study' i.e. memorization/train
+            test_output = ec_maxpool_flat
+            acc_ec = utils.accuracy(study_output, test_output)
+            batch_accuracies['ec'] = acc_ec
 
             #=============END EC=============#
 
@@ -243,6 +251,11 @@ def train(dataloader,
                 utils.showme(ectoca3_out_dressed.detach(), title="Cleaned-Trained")
                 # exit()
 
+            study_output = ectoca3_out_dressed  # TODO: we need the outputs at the time of 'study' i.e. memorization/train
+            test_output = ectoca3_out_dressed
+            acc_ecca3 = utils.accuracy(study_output, test_output)
+            batch_accuracies['ecca3'] = acc_ecca3
+
             #=============END EC->CA3=================#
 
 
@@ -257,8 +270,15 @@ def train(dataloader,
                 utils.showme(ca3_out_recall.detach(), title="Hopfield out")
                 # exit()
 
+            study_output = ca3_out_recall    # TODO: we need the outputs at the time of 'study' i.e. memorization/train
+            test_output = ca3_out_recall
+            acc_ca3 = utils.accuracy(study_output, test_output)
+            batch_accuracies['ca3'] = acc_ca3
+
             #=============END CA3 TRAINING==============#
 
+            print("----------- Accuracies -------------")
+            print(batch_accuracies)
 
 
             #=============RUN CA1 ======================#
@@ -308,6 +328,7 @@ def train(dataloader,
             utils.animate_weights(ca1_reconstruction.detach(), nrow=5, auto=False)
             
                 #=============END CA1 =============#
+
 
             # Optional exit to end after one batch
             exit()
@@ -387,4 +408,4 @@ train(dataloader,
       params,
       autosave=True,
       train_mode=False,
-      display=True)
+      display=False)

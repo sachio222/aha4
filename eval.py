@@ -209,6 +209,7 @@ def train(dataloader,
             else:
                 # Run training
                 loss_avg = utils.RunningAverage()
+                ectoca3_loss_history = []
 
                 with tqdm (desc="Updating EC->CA3", total=params.ectoca3_iters) as t1:
                     for i in range(params.ectoca3_iters):
@@ -229,6 +230,8 @@ def train(dataloader,
                         if display:
                             utils.animate_weights(trained_sparse.detach(), auto=False)
 
+                        ectoca3_loss_history.append(ectoca3_loss)
+
                 if autosave:
                     ec_state = utils.get_save_state(epoch, step4_ectoca3,
                                                     ectoca3_optimizer)
@@ -236,6 +239,9 @@ def train(dataloader,
                                           model_path,
                                           name="ectoca3_weights",
                                           silent=False)
+
+                utils.plot_it(ectoca3_loss_history)
+                # TODO: run a forward pass on test set, get loss, and plot on the same plot (learning curves)
 
             # Polarize output from (0, 1) to (-1, 1) for step3_ca3
             # ectoca3_out_dressed = modules.center_me_zero(trained_sparse)
@@ -303,13 +309,13 @@ def train(dataloader,
                                           model_path,
                                           name="ca1_weights",
                                           silent=False)
-                
+
                 print("Graph cleared.", end=" ")
                 print("Weights successfully updated.\n")
-            
+
             ## DISPLAY
             utils.animate_weights(ca1_reconstruction.detach(), nrow=5, auto=False)
-            
+
                 #=============END CA1 =============#
 
             # Optional exit to end after one batch
@@ -379,7 +385,7 @@ ca1_optimizer = optim.Adam(step5_ca1.parameters(),
 utils.load_checkpoint(pretrain_path, step1_ec, name=f"pre_train_{pretrain_params.batch_size}")
 
 # Start training
-# Train mode runs backprop and stores weights in the Hopfield net. 
+# Train mode runs backprop and stores weights in the Hopfield net.
 # Autosave over-writes existing weights if set to true.
 
 train(dataloader,

@@ -196,3 +196,36 @@ def animate_weights(t, nrow=11, label=None, auto=False):
         plt.show(block=False)
         plt.pause(0.0001)
         plt.close()
+
+
+def accuracy(study, test):
+    """ compute the accuracy mse matching between study and train set"""
+    import numpy as np
+
+    correct_count = 0
+    for i, sample in enumerate(study):
+
+        # TODO: I'm not sure to detach, or to make into np !!! but this seemed to work .... for now
+        error = sample - test
+        sq_error = np.square(error.detach())
+        mse = torch.mean(sq_error, dim=1)
+        min_idx = np.argmin(mse)
+
+        print("i={}, min_idx={}".format(i, min_idx))
+        # This is a special case when the matching test sample is at the same index as the study sample
+        if min_idx == i:
+            correct_count += 1
+
+    acc = correct_count / len(study)
+    return acc
+
+
+def plot_it(vals):
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    x = np.linspace(0, 1, len(vals))
+    fig, ax = plt.subplots()
+    train_loss, = ax.plot(x, vals, '--', linewidth=2, label='ec-ca3 loss')
+    ax.legend(loc='upper right')
+    plt.show()
