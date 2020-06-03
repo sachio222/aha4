@@ -211,7 +211,7 @@ def accuracy(study, test):
         mse = torch.mean(sq_error, dim=1)
         min_idx = np.argmin(mse)
 
-        print("i={}, min_idx={}".format(i, min_idx))
+        # print("i={}, min_idx={}".format(i, min_idx))
         # This is a special case when the matching test sample is at the same index as the study sample
         if min_idx == i:
             correct_count += 1

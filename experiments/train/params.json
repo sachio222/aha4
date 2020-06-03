@@ -1,5 +1,6 @@
 {
     "batch_size": 20,
+    "batches": 5,
     "ca1_iters": 100,
     "ca1_learning_rate": 67e-4, 
     "ca1_weight_decay": 1e-4,

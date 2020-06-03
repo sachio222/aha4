@@ -57,6 +57,7 @@ assert json_path.is_file(
 params = utils.Params(json_path)
 pretrain_params = utils.Params(json_path_pretrain)
 
+out_vals_array = []
 
 # If GPU, write to params file
 params.cuda = torch.cuda.is_available()
@@ -100,8 +101,20 @@ def train(dataloader,
         step4_ectoca3.train()
         step5_ca1.train()
 
+    # reload object from file
+    import pickle
+    file = open(r'ideal_vals.pkl', 'rb')
+    ideal_vals_array = pickle.load(file)
+    file.close()
+
     for epoch in range(params.num_epochs):
         for i, x in enumerate(dataloader):
+
+            if i >= params.batches:
+                break
+
+            ideal_vals = ideal_vals_array[i]
+            out_vals = {}
 
             batch_accuracies = {}
 
@@ -118,6 +131,7 @@ def train(dataloader,
 
             with torch.no_grad():
                 ec_maxpool_flat = step1_ec(x, k=4)
+                out_vals['ec'] = ec_maxpool_flat
 
             if display:
                 utils.animate_weights(step1_ec.encoder.weight.data, nrow=11)
@@ -139,10 +153,6 @@ def train(dataloader,
 
             #=====END MONIT.=====#
 
-            study_output = ec_maxpool_flat  # TODO: we need the outputs at the time of 'study' i.e. memorization/train
-            test_output = ec_maxpool_flat
-            acc_ec = utils.accuracy(study_output, test_output)
-            batch_accuracies['ec'] = acc_ec
 
             #=============END EC=============#
 
@@ -207,6 +217,8 @@ def train(dataloader,
                 # print(f"trained: {trained_sparse[3].max()}")
                 # torch.set_printoptions(profile="default")
 
+                out_vals['ectoca3'] = trained_sparse
+
                 ## DISPLAY
                 if display:
                     utils.showme(trained_sparse.detach(), title="Trained Prediction")
@@ -251,11 +263,6 @@ def train(dataloader,
                 utils.showme(ectoca3_out_dressed.detach(), title="Cleaned-Trained")
                 # exit()
 
-            study_output = ectoca3_out_dressed  # TODO: we need the outputs at the time of 'study' i.e. memorization/train
-            test_output = ectoca3_out_dressed
-            acc_ecca3 = utils.accuracy(study_output, test_output)
-            batch_accuracies['ecca3'] = acc_ecca3
-
             #=============END EC->CA3=================#
 
 
@@ -265,20 +272,15 @@ def train(dataloader,
             ca3_out_recall = step3_ca3.update(ectoca3_out_dressed)
             # ca3_out_recall = step3_ca3.update(dg_sparse_dressed)
 
+            out_vals['ca3'] = ca3_out_recall
+
             ## DISPLAY
             if display:
                 utils.showme(ca3_out_recall.detach(), title="Hopfield out")
                 # exit()
 
-            study_output = ca3_out_recall    # TODO: we need the outputs at the time of 'study' i.e. memorization/train
-            test_output = ca3_out_recall
-            acc_ca3 = utils.accuracy(study_output, test_output)
-            batch_accuracies['ca3'] = acc_ca3
 
             #=============END CA3 TRAINING==============#
-
-            print("----------- Accuracies -------------")
-            print(batch_accuracies)
 
 
             #=============RUN CA1 ======================#
@@ -286,7 +288,9 @@ def train(dataloader,
             if not train_mode:
                 ca1_reconstruction = step5_ca1(ca3_out_recall)
                 utils.animate_weights(ca1_reconstruction.detach(), nrow=5, auto=False)
-                exit()
+
+                out_vals['ca1'] = ca1_reconstruction
+                # exit()
             else:
                 loss_avg.reset()
 
@@ -329,9 +333,15 @@ def train(dataloader,
             
                 #=============END CA1 =============#
 
+            out_vals_array.append(out_vals)
 
-            # Optional exit to end after one batch
-            exit()
+            # calc accuracies
+            print("----------- Accuracies -------------")
+            for signal in ['ec', 'ectoca3', 'ca3', 'ca1']:
+                acc = utils.accuracy(ideal_vals[signal], out_vals[signal])
+                batch_accuracies[signal] = acc
+            print(batch_accuracies)
+
 
 
 # Define transforms

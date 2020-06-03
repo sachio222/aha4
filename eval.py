@@ -44,6 +44,8 @@ from utils import utils  # pylint: disable=RP0003, F0401
 # print("\033c", end="") # (Doesn't fully clear screen on PC)
 print("\033[H\033[2J", end="")
 
+ideal_vals_array = []
+
 # Initialize paths to json parameters
 data_path = Path().absolute() / "data"
 model_path = Path().absolute() / "experiments/train/"
@@ -101,6 +103,11 @@ def train(dataloader,
 
     for epoch in range(params.num_epochs):
         for i, x in enumerate(dataloader):
+
+            if i >= params.batches:
+                break
+
+            ideal_vals = {}
             if params.cuda:
                 x = x.cuda(non_blocking=True)
 
@@ -114,6 +121,7 @@ def train(dataloader,
 
             with torch.no_grad():
                 ec_maxpool_flat = step1_ec(x, k=4)
+                ideal_vals['ec'] = ec_maxpool_flat
 
             if display:
                 utils.animate_weights(step1_ec.encoder.weight.data, nrow=11)
@@ -163,7 +171,6 @@ def train(dataloader,
 
             #=============RUN CA3 TRAINING==============#
 
-
             # GK: this needs to do multiple training iterations with the same DG input (as does EC-CA3)
             # GK: is that the case here?
 
@@ -186,6 +193,9 @@ def train(dataloader,
             if display:
                 utils.showme(ca3_weights, title="Weights")
                 # exit()
+
+            ideal_vals['ca3'] = dg_sparse_dressed
+
             #=============END CA3 TRAINING==============#
 
 
@@ -211,7 +221,8 @@ def train(dataloader,
                 loss_avg = utils.RunningAverage()
                 ectoca3_loss_history = []
 
-                with tqdm (desc="Updating EC->CA3", total=params.ectoca3_iters) as t1:
+                with tqdm(desc="Updating EC->CA3", total=params.ectoca3_iters) as t1:
+                    trained_sparse = None
                     for i in range(params.ectoca3_iters):
                         trained_sparse = step4_ectoca3(ec_maxpool_flat)
                         ectoca3_loss = ectoca3_loss_fn(trained_sparse, dg_sparse)
@@ -232,6 +243,8 @@ def train(dataloader,
 
                         ectoca3_loss_history.append(ectoca3_loss)
 
+                    ideal_vals['ectoca3'] = trained_sparse
+
                 if autosave:
                     ec_state = utils.get_save_state(epoch, step4_ectoca3,
                                                     ectoca3_optimizer)
@@ -240,8 +253,10 @@ def train(dataloader,
                                           name="ectoca3_weights",
                                           silent=False)
 
-                utils.plot_it(ectoca3_loss_history)
+                if display:
+                    utils.plot_it(ectoca3_loss_history)
                 # TODO: run a forward pass on test set, get loss, and plot on the same plot (learning curves)
+
 
             # Polarize output from (0, 1) to (-1, 1) for step3_ca3
             # ectoca3_out_dressed = modules.center_me_zero(trained_sparse)
@@ -280,6 +295,7 @@ def train(dataloader,
                 loss_avg.reset()
 
                 with tqdm (desc="Updating CA1", total=params.ca1_iters) as t2:
+                    ca1_reconstruction = None
                     for i in range(params.ca1_iters):
                         ca1_reconstruction = step5_ca1(ca3_out_recall)
                         ca1_loss = ca1_loss_fn(ca1_reconstruction, x)
@@ -302,6 +318,8 @@ def train(dataloader,
                         if display:
                             utils.animate_weights(ca1_reconstruction.detach(), nrow=5, auto=False)
 
+                    ideal_vals['ca1'] = ca1_reconstruction
+
                 if autosave:
                     ec_state = utils.get_save_state(epoch, step5_ca1,
                                                     ectoca3_optimizer)
@@ -314,12 +332,22 @@ def train(dataloader,
                 print("Weights successfully updated.\n")
 
             ## DISPLAY
-            utils.animate_weights(ca1_reconstruction.detach(), nrow=5, auto=False)
+            if display:
+                utils.animate_weights(ca1_reconstruction.detach(), nrow=5, auto=False)
 
                 #=============END CA1 =============#
 
+            ideal_vals_array.append(ideal_vals)
+
             # Optional exit to end after one batch
-            exit()
+            # exit()
+
+    import pickle
+    file = open(r'ideal_vals.pkl', 'wb')
+    pickle.dump(ideal_vals_array, file)
+    file.close()
+
+
 
 
 # Define transforms
