@@ -39,6 +39,11 @@ def parse_args(argv=None):
     p.add_argument("--run", type=int, default=1, help="which one-shot run, 1 to 20")
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--no-interest-filter", action="store_true")
+    p.add_argument("--match", default=oneshot.DIRECTIONS[0], choices=oneshot.DIRECTIONS)
+    p.add_argument("--normalise", action="store_true",
+                   help="L2-normalise vectors before MSE matching")
+    p.add_argument("--normalise-input", action="store_true",
+                   help="L2-normalise the VC output before it feeds DG and PR")
     p.add_argument("--out", default="figures/aha_run01.png")
     return p.parse_args(argv)
 
@@ -83,7 +88,7 @@ def main(argv=None):
     device = utils.resolve_device(args.device)
     utils.set_seed(args.seed)
 
-    config = AHAConfig()
+    config = AHAConfig(normalise_input=args.normalise_input)
     vc = load_vc(args.checkpoint, interest_filter=not args.no_interest_filter, device=device)
     aha = AHA(vc, config, device=device)
     run = data.load_runs(args.data_dir, config.image_size, centre=not args.no_centre)[args.run - 1]
@@ -94,7 +99,8 @@ def main(argv=None):
 
     print("Run {}, seed {}, device {}".format(args.run, args.seed, device))
     for stage in oneshot.STAGES:
-        acc = oneshot.run_accuracy(study[stage], recall[stage], run["labels"])
+        acc = oneshot.run_accuracy(study[stage], recall[stage], run["labels"],
+                                   args.match, args.normalise)
         print("  {:<7} {:.0%}".format(stage, acc))
     print("  recall-loss {:.4f}".format(
         oneshot.recall_loss(recall["pm"], run["study"], run["labels"])))
