@@ -23,7 +23,7 @@ PAPER = {"vc": 0.716, "pr": 0.864}
 ROWS = [
     ("oneshot.json", "grid", "Default: study-to-test, raw scale"),
     ("match_test_to_study.json", "grid", "Test-to-study matching, the repo's first version"),
-    ("normalise.json", "grid", "Normalised matching"),
+    ("normalise.json", "grid", "Normalised matching, the best configuration found"),
     ("normalise_test_to_study.json", "grid", "Normalised matching, test-to-study"),
     ("normalise_input.json", "grid", "VC output normalised before DG and PR"),
     ("normalise_input_normalise.json", "grid",
@@ -31,12 +31,12 @@ ROWS = [
     ("pretrain_seeds.json", "grid", "Default, VC pretrained with seeds 0, 1 and 2"),
     ("mse.json", "grid", "MSE pretraining"),
     ("mse_normalise.json", "grid", "MSE pretraining, normalised matching"),
+    ("mse_pretrain_seeds.json", "grid", "MSE pretraining, seeds 0, 1 and 2"),
     ("mse_no_interest_filter.json", "grid", "MSE pretraining, no interest filter"),
     ("mse_normalise_input_normalise.json", "grid",
      "MSE pretraining, VC output normalised before DG and PR, normalised matching"),
-    ("best.json", "grid", "Best configuration found, picked on test scores"),
     ("best_pretrain_seeds.json", "grid",
-     "Best configuration found, VC pretrained with seeds 0, 1 and 2"),
+     "Normalised matching, VC pretrained with seeds 0, 1 and 2"),
     ("ablation_no_interest_filter.json", "ablation", "No interest filter"),
     ("ablation_no_centre.json", "ablation", "No centring of drawings"),
     ("ablation_hebbian.json", "ablation", "Hebbian learning in CA3 instead of pseudo-inverse"),
@@ -107,12 +107,23 @@ def grid_table(rows):
 
 def results_table(row):
     """Markdown table for one row, every stage, with the paper's numbers."""
-    names = {"pixels": "Raw pixels", "vc": "VC(EC) alone", "pr": "PR(EC-CA3)",
-             "pc": "PC(CA3)", "pm": "PM(CA1)"}
-    lines = ["| Stage scored | This repo | Paper |", "|---|---|---|"]
+    names = {
+        "pixels": ("Raw pixels", "Floor for comparison", "not reported"),
+        "vc": ("VC(EC) alone", "Vision network only, the paper's baseline", None),
+        "pr": ("PR(EC-CA3)", "AHA, the paper's headline number", None),
+        "pc": ("PC(CA3)", "AHA after the Hopfield memory settles",
+               '"no better than" the baseline'),
+        "pm": ("PM(CA1)", "AHA's recalled image", "not reported"),
+    }
+    lines = ["| Stage scored | What it measures | This repo | Paper |", "|---|---|---|---|"]
     for stage in STAGES:
-        paper = "{:.1%}".format(PAPER[stage]) if stage in PAPER else "-"
-        lines.append("| {} | {} | {} |".format(names[stage], cell(row, stage), paper))
+        name, what, paper = names[stage]
+        ours = cell(row, stage)
+        if stage in PAPER:
+            paper = "{:.1%}".format(PAPER[stage])
+        if stage == "pr":
+            ours, paper = "**{}**".format(ours), "**{}**".format(paper)
+        lines.append("| {} | {} | {} | {} |".format(name, what, ours, paper))
     return "\n".join(lines)
 
 

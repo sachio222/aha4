@@ -1,0 +1,18 @@
+file,label,match,normalise,normalise_input,loss,interest_filter,centre,ca3_rule,checkpoints,seeds,spread,pixels_mean,pixels_std,vc_mean,vc_std,pr_mean,pr_std,pc_mean,pc_std,pm_mean,pm_std
+oneshot.json,"Default: study-to-test, raw scale",study-to-test,False,False,bce,True,True,pinverse,1,10,seeds,0.4425,0.0000,0.5225,0.0000,0.6472,0.0120,0.6158,0.0094,0.6190,0.0066
+match_test_to_study.json,"Test-to-study matching, the repo's first version",test-to-study,False,False,bce,True,True,pinverse,1,10,seeds,0.4750,0.0000,0.5600,0.0000,0.6125,0.0092,0.6245,0.0078,0.6153,0.0088
+normalise.json,"Normalised matching, the best configuration found",study-to-test,True,False,bce,True,True,pinverse,1,10,seeds,0.4750,0.0000,0.6300,0.0000,0.7060,0.0142,0.6150,0.0071,0.6252,0.0105
+normalise_test_to_study.json,"Normalised matching, test-to-study",test-to-study,True,False,bce,True,True,pinverse,1,10,seeds,0.4675,0.0000,0.6725,0.0000,0.6320,0.0121,0.6245,0.0078,0.6168,0.0082
+normalise_input.json,VC output normalised before DG and PR,study-to-test,False,True,bce,True,True,pinverse,1,10,seeds,0.4425,0.0000,0.6300,0.0000,0.6600,0.0110,0.6153,0.0138,0.6130,0.0093
+normalise_input_normalise.json,"VC output normalised before DG and PR, normalised matching",study-to-test,True,True,bce,True,True,pinverse,1,10,seeds,0.4750,0.0000,0.6300,0.0000,0.7030,0.0150,0.6128,0.0139,0.6188,0.0095
+pretrain_seeds.json,"Default, VC pretrained with seeds 0, 1 and 2",study-to-test,False,False,bce,True,True,pinverse,3,10,checkpoints,0.4425,0.0000,0.5442,0.0194,0.6707,0.0205,0.6299,0.0129,0.6302,0.0105
+mse.json,MSE pretraining,study-to-test,False,False,mse,True,True,pinverse,1,10,seeds,0.4425,0.0000,0.5400,0.0000,0.5930,0.0173,0.5330,0.0191,0.5440,0.0139
+mse_normalise.json,"MSE pretraining, normalised matching",study-to-test,True,False,mse,True,True,pinverse,1,10,seeds,0.4750,0.0000,0.5900,0.0000,0.6378,0.0116,0.5323,0.0169,0.5450,0.0131
+mse_pretrain_seeds.json,"MSE pretraining, seeds 0, 1 and 2",study-to-test,False,False,mse,True,True,pinverse,3,10,checkpoints,0.4425,0.0000,0.5458,0.0170,0.6020,0.0121,0.5363,0.0163,0.5464,0.0195
+mse_no_interest_filter.json,"MSE pretraining, no interest filter",study-to-test,False,False,mse,False,True,pinverse,1,10,seeds,0.4425,0.0000,0.5775,0.0000,0.5713,0.0159,0.2320,0.0258,0.2998,0.0164
+mse_normalise_input_normalise.json,"MSE pretraining, VC output normalised before DG and PR, normalised matching",study-to-test,True,True,mse,True,True,pinverse,1,10,seeds,0.4750,0.0000,0.5900,0.0000,0.6388,0.0146,0.5318,0.0212,0.5428,0.0162
+best_pretrain_seeds.json,"Normalised matching, VC pretrained with seeds 0, 1 and 2",study-to-test,True,False,bce,True,True,pinverse,3,10,checkpoints,0.4750,0.0000,0.6317,0.0014,0.7197,0.0122,0.6292,0.0129,0.6363,0.0096
+ablation_no_interest_filter.json,No interest filter,study-to-test,False,False,bce,False,True,pinverse,1,10,seeds,0.4425,0.0000,0.5375,0.0000,0.5253,0.0102,0.1825,0.0165,0.2610,0.0171
+ablation_no_centre.json,No centring of drawings,study-to-test,False,False,bce,True,False,pinverse,1,10,seeds,0.2075,0.0000,0.2975,0.0000,0.4128,0.0148,0.3808,0.0106,0.3758,0.0091
+ablation_hebbian.json,Hebbian learning in CA3 instead of pseudo-inverse,study-to-test,False,False,bce,True,True,hebbian,1,10,seeds,0.4425,0.0000,0.5225,0.0000,0.6472,0.0120,0.0575,0.0049,0.0583,0.0062
+cpu_seed0.json,"CPU, seed 0",study-to-test,False,False,bce,True,True,pinverse,1,1,seeds,0.4425,0.0000,0.5225,0.0000,0.6600,0.0000,0.6200,0.0000,0.6225,0.0000
