@@ -1,7 +1,0 @@
-{
-    "learning_rate": 1e-3,
-    "batch_size": 2,
-    "num_epochs": 20000,
-    "num_workers": 0,
-    "resize_dim": 52
-} 
