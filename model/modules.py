@@ -126,7 +126,10 @@ class InterestFilter(nn.Module):
 
         dog = gaussian_kernel(dog_size, dog_std) - gaussian_kernel(dog_size, dog_std * dog_k)
         self.register_buffer("dog", dog[None, None])
-        self.register_buffer("smooth", gaussian_kernel(smooth_size, smooth_std)[None, None])
+        # The blur is a Gaussian, which splits into a row pass and a column
+        # pass. Same result, and far faster than a 15x15 kernel on the CPU.
+        g = torch.exp(-(torch.arange(smooth_size) - (smooth_size - 1) / 2) ** 2 / (2 * smooth_std**2))
+        self.register_buffer("smooth", (g / g.sum()).float())
 
     def mask(self, images):
         """Returns a (batch, 1, H, W) mask with up to 2k interest points."""
@@ -148,9 +151,12 @@ class InterestFilter(nn.Module):
 
     def forward(self, images, features):
         features = features * self.mask(images)
-        channels = features.shape[1]
-        kernel = self.smooth.expand(channels, 1, -1, -1)
-        return F.conv2d(features, kernel, padding=kernel.shape[-1] // 2, groups=channels)
+        b, c, h, w = features.shape
+        x = features.reshape(b * c, 1, h, w)
+        pad = self.smooth.numel() // 2
+        x = F.conv2d(x, self.smooth.view(1, 1, -1, 1), padding=(pad, 0))
+        x = F.conv2d(x, self.smooth.view(1, 1, 1, -1), padding=(0, pad))
+        return x.reshape(b, c, h, w)
 
 
 class ECPretrain(nn.Module):
@@ -208,12 +214,15 @@ class ECPretrain(nn.Module):
 
         return code
 
-    def forward(self, x, k=1):
+    def logits(self, x, k=1):
+        """Pre-sigmoid reconstruction, for a numerically stable loss."""
         code = self.encode(x, k)
-        x = F.conv_transpose2d(code, self.encoder.weight, self.decoder_bias,
-                               stride=self.encoder.stride,
-                               padding=self.encoder.padding)
-        return torch.sigmoid(x)
+        return F.conv_transpose2d(code, self.encoder.weight, self.decoder_bias,
+                                  stride=self.encoder.stride,
+                                  padding=self.encoder.padding)
+
+    def forward(self, x, k=1):
+        return torch.sigmoid(self.logits(x, k))
 
 
 class EC(nn.Module):
@@ -365,9 +374,14 @@ class ECToCA3(nn.Module):
         self.fc1 = nn.Linear(D_in, hidden)
         self.fc2 = nn.Linear(hidden, D_out)
 
+    def logits(self, x):
+        """Pre-sigmoid outputs. Train on these with BCE-with-logits: at the
+        paper's learning rate a plain sigmoid saturates to exactly 0 and the
+        gradient dies."""
+        return self.fc2(F.leaky_relu(self.fc1(x)))
+
     def forward(self, x):
-        x = F.leaky_relu(self.fc1(x))
-        return torch.sigmoid(self.fc2(x))
+        return torch.sigmoid(self.logits(x))
 
 
 class CA3():
@@ -445,7 +459,7 @@ class CA3():
         product. I compute it in float64 on the CPU because pinverse is not
         on every GPU backend and float32 loses precision here.
         """
-        X64 = X.detach().double().cpu()
+        X64 = X.detach().cpu().double()
         self.W = (torch.linalg.pinv(X64) @ X64).float().to(X.device)
         return self.W
 

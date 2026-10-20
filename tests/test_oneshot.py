@@ -38,3 +38,14 @@ def test_bug8_parse_class_labels_maps_test_items_to_training_classes():
         "",
     ]
     assert data.parse_class_labels(lines) == [7, 8]
+
+
+def test_centre_of_mass_moves_ink_to_the_middle():
+    x = torch.zeros(1, 52, 52)
+    x[0, 2:6, 40:44] = 1.0  # a blob near the top right corner
+    out = data.centre_of_mass(x)
+    ys = torch.arange(52.0)
+    cy = (out[0].sum(dim=1) * ys).sum() / out.sum()
+    cx = (out[0].sum(dim=0) * ys).sum() / out.sum()
+    assert abs(cy.item() - 25.5) < 0.5 and abs(cx.item() - 25.5) < 0.5
+    assert abs(out.sum().item() - x.sum().item()) < 1e-3

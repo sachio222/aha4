@@ -115,3 +115,24 @@ def test_hopfield_recall_completes_a_corrupted_pattern():
     cue[:, :20] *= -1  # flip some units in every pattern
     out = ca3.update(cue)
     assert torch.all(torch.sign(out) == X)
+
+
+DEVICES = ["cpu"]
+if torch.backends.mps.is_available():
+    DEVICES.append("mps")
+if torch.cuda.is_available():
+    DEVICES.append("cuda")
+
+
+@pytest.mark.parametrize("device", DEVICES)
+def test_hopfield_trains_and_recalls_on_every_available_device(device):
+    torch.manual_seed(0)
+    X = -torch.ones(5, 225)
+    for i in range(5):
+        X[i, torch.randperm(225)[:10]] = 1.0
+    X = X.to(device)
+    ca3 = modules.CA3(225)
+    ca3.train(X)
+    out = ca3.update(X)
+    assert out.device.type == device
+    assert torch.all(torch.sign(out) == X)
