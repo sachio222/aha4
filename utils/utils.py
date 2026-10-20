@@ -1,38 +1,14 @@
-# utils.py
-# Jacob Krajewski, 2020
-#
-# Large portions inspired from Stanford CS2300 best practices guidelines
-# for deep learning projects. Original repository available below:
-# https://github.com/cs230-stanford/cs230-code-examples/blob/master/pytorch/vision/utils.py
+"""Small helpers for devices, seeds and checkpoints.
 
-import json
+Checkpoint helpers started from the Stanford CS230 project guidelines:
+https://github.com/cs230-stanford/cs230-code-examples/blob/master/pytorch/vision/utils.py
+"""
+
+import random
+from pathlib import Path
+
+import numpy as np
 import torch
-import torchvision
-import matplotlib.pyplot as plt
-from pathlib2 import Path
-
-
-class Params():
-
-    def __init__(self, json_path):
-        with open(json_path) as f:
-            params = json.load(f)
-            self.__dict__.update(params)
-
-    def save(self, json_path):
-        with open(json_path, "w") as f:
-            json.dump(self.__dict__, f, indent=4)
-
-    def update(self, json_path):
-        """Loads parameters from json file."""
-        with open(json_path) as f:
-            params = json.load(f)
-            self.__dict__.update(params)
-
-    @property
-    def dict(self):
-        """Gives dict-like access to Params instance by 'params.dict['learning_rate]."""
-        return self.__dict__
 
 
 class RunningAverage():
@@ -42,6 +18,7 @@ class RunningAverage():
     ```
     loss_avg = RunningAverage()
     loss_avg.update(2)
+    loss_avg.update(4)
     loss_avg() = 3
     ```
     """
@@ -60,139 +37,98 @@ class RunningAverage():
     reset = __init__
 
 
-def show_sample_img(dataset, idx):
-    sample = dataset.__getitem__(idx)
-    plt.imshow(sample[0].numpy()[0])
-    plt.show()
+def resolve_device(name="auto"):
+    """Turns "auto", "cpu", "mps" or "cuda" into a torch.device.
 
-
-def print_full_tensor(tensor):
-    """You know how it only shows part of the tensor when you print?
-
-    Well use this to show the whole thing.
+    "auto" picks CUDA if there is an NVIDIA GPU, then MPS (Apple Silicon),
+    then CPU. Asking for a backend this machine doesn't have raises a
+    RuntimeError up front instead of failing halfway through a run.
     """
+    name = name.lower()
+    if name == "auto":
+        if torch.cuda.is_available():
+            return torch.device("cuda")
+        if torch.backends.mps.is_available():
+            return torch.device("mps")
+        return torch.device("cpu")
+    if name.startswith("cuda") and not torch.cuda.is_available():
+        raise RuntimeError("CUDA was requested but is not available here.")
+    if name == "mps" and not torch.backends.mps.is_available():
+        raise RuntimeError("MPS was requested but is not available here.")
+    return torch.device(name)
 
-    torch.set_printoptions(profile="full")
-    print(tensor)
-    torch.set_printoptions(profile="default")
+
+def to_device(batch, device):
+    """Moves the images of a batch to device.
+
+    Dataloaders hand back (images, labels). The old code did
+    `x, _ = x.cuda()`, which unpacks the image tensor itself along the batch.
+    """
+    images = batch[0] if isinstance(batch, (tuple, list)) else batch
+    return images.to(device, non_blocking=True)
+
+
+def set_seed(seed):
+    """Seeds Python, NumPy and PyTorch so runs repeat."""
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
 
 
 def get_save_state(epoch, model, optimizer):
-    state = {
+    """Bundles model and optimizer state for save_checkpoint.
+
+    Raises ValueError if the optimizer doesn't hold the model's parameters,
+    which is how the CA1 checkpoint ended up with the PR optimizer.
+    """
+    owned = {id(p) for group in optimizer.param_groups for p in group["params"]}
+    trainable = [p for p in model.parameters() if p.requires_grad]
+    if not all(id(p) in owned for p in trainable):
+        raise ValueError("This optimizer does not own the model's parameters.")
+
+    return {
         'epoch': epoch + 1,
         'state_dict': model.state_dict(),
         'optim_dict': optimizer.state_dict()
     }
-    return state
 
 
 def save_checkpoint(state, checkpoint, name="last", silent=True):
-    """Saves state dict to file. 
+    """Saves a state dict to checkpoint/name.pth.tar.
 
     Args:
-        state: (dict) contains epoch, state dict and optimizer dict
-        checkpoint: (Path) directory name to store saved states
-        name: (string) previx to '.pth.tar' eg: name.pth.tar
-        silent: (bool) if True, bypass output messages
-
-    Todo:
-        Simplify the silent checks so I don't need 4 if statements
+        state: (dict) contains the state dict, and optionally epoch and optimizer dict
+        checkpoint: (Path) directory to store saved states, created if missing
+        name: (string) prefix to '.pth.tar' eg: name.pth.tar
+        silent: (bool) if True, skip output messages
     """
+    checkpoint = Path(checkpoint)
+    checkpoint.mkdir(parents=True, exist_ok=True)
     filepath = checkpoint / "{}.pth.tar".format(name)
-    if not Path(checkpoint).exists():
-        if not silent:
-            print("Creating checkpoint directory {}".format(checkpoint))
-        Path(checkpoint).mkdir()
-    else:
-        if not silent:
-            print("Getting checkpoint directory...")
+    torch.save(state, filepath)
     if not silent:
-        print("Saving file...")
-    # Remember to convert filepath to str or it flips out when trying to save
-    torch.save(state, str(filepath))
-    if not silent:
-        print("File saved successfully.")
+        print("Saved {}".format(filepath))
+    return filepath
 
 
-def load_checkpoint(checkpoint, model, optimizer=None, name="last"):
-    """Loads parameters dict from checkpoint file to model, and optimizer.
+def load_checkpoint(checkpoint, model, optimizer=None, name="last", map_location="cpu"):
+    """Loads parameters from checkpoint/name.pth.tar into model (and optimizer).
 
     Args:
-        checkpoint: (string) filename to load
-        model: (torch.nn.Module) model to load parameters
+        checkpoint: (Path) directory holding the file
+        model: (torch.nn.Module) model to load parameters into
         optimizer: (torch.optim) optional: resume optimizer from checkpoint
-        name: (string) previx to '.pth.tar' eg: name.pth.tar
+        name: (string) prefix to '.pth.tar' eg: name.pth.tar
+        map_location: where to put the tensors, "cpu" works everywhere
     """
-    filepath = checkpoint / "{}.pth.tar".format(name)
+    filepath = Path(checkpoint) / "{}.pth.tar".format(name)
+    if not filepath.is_file():
+        raise FileNotFoundError("No checkpoint at {}".format(filepath))
 
-    print("Looking for saved files...", end=" ")
+    state = torch.load(filepath, map_location=map_location)
+    model.load_state_dict(state["state_dict"])
 
-    if not Path(checkpoint).exists():
-        raise ("File does not exist at {}".format(checkpoint))
-    checkpoint = torch.load(str(filepath))
+    if optimizer is not None:
+        optimizer.load_state_dict(state["optim_dict"])
 
-    print("Found.")
-
-    model.load_state_dict(checkpoint.get("state_dict"), strict=False)
-
-    if optimizer:
-        optimizer.load_state_dict(checkpoint.get("optim_dict"))
-
-    print("Loading saved weights complete.")
-    return checkpoint
-
-
-def showme(tnsr,
-           size_dim0=10,
-           size_dim1=10,
-           title=None,
-           full=False,
-           detach=False,
-           grid=False):
-    """Does all the nasty matplotlib stuff for free. 
-    """
-    if detach:
-        tnsr = tnsr.detach().numpy()
-
-    if not grid:
-        if len(tnsr.shape) > 2:
-            tnsr = tnsr.view(tnsr.shape[0], -1)
-
-        fig, ax = plt.subplots(figsize=(size_dim0, size_dim1))
-        ax.set_title(title, color="blue", loc="left", pad=20)
-        ax.matshow(tnsr)
-        plt.show()
-        print(tnsr.shape)
-        if full:
-            print(tnsr)
-    else:
-        grid_img = torchvision.utils.make_grid(tnsr, nrow=5)
-        plt.imshow(grid_img.permute(1, 2, 0))
-        plt.show()
-        print(tnsr.shape)
-
-
-def animate_weights(t, nrow=11, label=None, auto=False):
-    """Animates weights during training. Only works on Mac.
-
-    Press ctrl + C in terminal to escape. Change auto to True if you are 
-    running on a mac. It is pretty good. 
-
-        Usage example:
-            >>> animate_weights(conv1_weights, i)
-
-    Args:
-        t: (tensor) from "model.layer_name.weight.data" on layer
-        iter: (scalar, string) Optional. Shows label for each pass
-    """
-
-    grid_img = torchvision.utils.make_grid(t, nrow)
-    # plt.ion()
-    plt.title(label, color="blue", loc="left", pad=20)
-    plt.imshow(grid_img.numpy()[0])
-    if not auto:
-        plt.show(block=True)
-    else:
-        plt.show(block=False)
-        plt.pause(0.0001)
-        plt.close()
+    return state

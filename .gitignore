@@ -1,5 +1,24 @@
-# Ignore personal workspace, vscode, ds_store
-*.code-workspace
-/.vscode
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+.venv/
+venv/
+
+# Editors and OS
 .DS_Store
-train.py
+.vscode/
+.idea/
+*.code-workspace
+
+# Omniglot and the one-shot runs download here
+data/*
+!data/.gitkeep
+
+# Script outputs. Pictures used by the README live in docs/.
+figures/
+checkpoints/*
+!checkpoints/vc_pretrained.pth.tar
+*.pth.tar
+!checkpoints/vc_pretrained.pth.tar
