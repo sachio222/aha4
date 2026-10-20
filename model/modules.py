@@ -16,7 +16,7 @@ docstring:
     ECToCA3         ->  PR(EC-CA3)  Pattern Retrieval
     CA1             ->  PM(CA1)     Pattern Mapping
 
-EC is the entorhinal cortex, the gateway between neocortex and hippocampus.
+EC is the entorhinal cortex, the main link between neocortex and hippocampus.
 DG is the dentate gyrus. CA3 and CA1 are fields of the hippocampus proper
 (CA stands for cornu Ammonis). Everything except the vision part makes up
 AHA's short-term memory (STM), which model/aha.py wires together.
