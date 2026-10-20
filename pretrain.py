@@ -6,7 +6,10 @@ filters it ends up with look like pen strokes. The hippocampal parts never
 see these 30 alphabets.
 
 Paper settings (Table 3): 121 filters of 10x10, stride 5, one winner per
-position, learning rate 0.001, 2000 batches of 128.
+position, learning rate 0.001, 2000 batches of 128. The paper doesn't name
+a reconstruction loss. The default is binary cross-entropy on a sigmoid
+output. --loss mse uses mean squared error on a linear output instead, as
+the authors' later code (Cerenaut/pt-aha) does.
 
 Example:
     python pretrain.py --device mps
@@ -35,6 +38,8 @@ def parse_args(argv=None):
     p.add_argument("--batch-size", type=int, default=128)
     p.add_argument("--lr", type=float, default=1e-3)
     p.add_argument("--k", type=int, default=1, help="winning filters per position")
+    p.add_argument("--loss", default="bce", choices=["bce", "mse"],
+                   help="reconstruction loss: bce on a sigmoid output, or mse on a linear one")
     p.add_argument("--num-workers", type=int, default=0)
     p.add_argument("--out-dir", default="checkpoints")
     p.add_argument("--name", default="vc_pretrained")
@@ -42,10 +47,19 @@ def parse_args(argv=None):
     return p.parse_args(argv)
 
 
-def pretrain_step(model, optimizer, batch, device, k=1):
+def reconstruction_loss(logits, x, loss="bce"):
+    """bce treats the output as a sigmoid, mse treats it as linear."""
+    if loss == "bce":
+        return F.binary_cross_entropy_with_logits(logits, x)
+    if loss == "mse":
+        return F.mse_loss(logits, x)
+    raise ValueError("loss must be 'bce' or 'mse'")
+
+
+def pretrain_step(model, optimizer, batch, device, k=1, loss="bce"):
     """One autoencoder update on a full batch. Returns the loss."""
     x = utils.to_device(batch, device)
-    loss = F.binary_cross_entropy_with_logits(model.logits(x, k=k), x)
+    loss = reconstruction_loss(model.logits(x, k=k), x, loss)
     optimizer.zero_grad()
     loss.backward()
     optimizer.step()
@@ -86,13 +100,14 @@ def main(argv=None):
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     model.train()
 
-    print("Device: {}. {} batches of {}.".format(device, args.batches, args.batch_size))
+    print("Device: {}. {} batches of {}, {} loss, seed {}.".format(
+        device, args.batches, args.batch_size, args.loss, args.seed))
     start, done = time.time(), 0
     loss_avg = utils.RunningAverage()
     while done < args.batches:
         # The paper counts batches, not epochs, so loop the loader as needed.
         for batch in loader:
-            loss_avg.update(pretrain_step(model, optimizer, batch, device, args.k))
+            loss_avg.update(pretrain_step(model, optimizer, batch, device, args.k, args.loss))
             done += 1
             if done % 100 == 0:
                 print("batch {:>5}  loss {:.4f}  {:.0f} s".format(

@@ -24,6 +24,7 @@ from model import modules
 class AHAConfig:
     image_size: int = 52
     vc_k: int = 4               # active filters per position at inference
+    normalise_input: bool = False  # L2-normalise the VC output before the STM (pt-aha)
 
     dg_units: int = 225         # PS(DG) and PC(CA3) size
     dg_k: int = 10              # active DG units per drawing
@@ -100,7 +101,15 @@ class AHA():
 
     @torch.no_grad()
     def encode(self, images):
-        return self.vc(images.to(self.device), k=self.cfg.vc_k)
+        """The VC output that every hippocampal part sees.
+
+        With normalise_input, each drawing's vector is divided by its L2
+        norm first, as in the authors' later code (Cerenaut/pt-aha). The
+        paper doesn't say. DG keeps the same winners either way, since it
+        has no bias and ranks within each drawing. PR does see a change.
+        """
+        vc = self.vc(images.to(self.device), k=self.cfg.vc_k)
+        return F.normalize(vc, dim=1) if self.cfg.normalise_input else vc
 
     def study(self, images):
         """Memorises a batch of drawings in one exposure."""
