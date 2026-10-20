@@ -6,6 +6,7 @@ of the original code. They failed before the fix and pass after it.
 
 import pytest
 import torch
+import torch.nn.functional as F
 
 from model import modules
 
@@ -136,3 +137,48 @@ def test_hopfield_trains_and_recalls_on_every_available_device(device):
     out = ca3.update(X)
     assert out.device.type == device
     assert torch.all(torch.sign(out) == X)
+
+
+def _stroke_images(n=20, size=52):
+    """Line drawings with plenty of blank page, made like the real inputs:
+    drawn at full size, shrunk with anti-aliasing, then centred by a
+    sub-pixel shift, so pixel values are fractional."""
+    from torchvision.transforms.functional import resize
+    from utils.data import centre_of_mass
+
+    torch.manual_seed(0)
+    big = torch.zeros(n, 1, 105, 105)
+    for i in range(n):
+        r, c = torch.randint(25, 60, (2,)).tolist()
+        big[i, 0, r:r + 3, c:c + 30] = 1.0     # a horizontal stroke
+        big[i, 0, r - 10:r + 15, c + 8:c + 11] = 1.0  # a vertical stroke
+    small = resize(big, [size, size], antialias=True)
+    return torch.stack([centre_of_mass(img) for img in small])
+
+
+def test_interest_points_sit_on_or_next_to_ink():
+    # Batched convolution on the CPU leaves noise near 1e-8 on blank page.
+    # Interest points must come from real edges, never from that noise.
+    x = _stroke_images()
+    mask = modules.InterestFilter().mask(x)
+    near_ink = F.max_pool2d(x, 7, 1, 3) > 0  # within the DoG kernel's reach
+    assert mask.sum() > 0
+    assert torch.all(mask[~near_ink] == 0)
+
+
+def test_interest_mask_does_not_depend_on_the_batch():
+    x = _stroke_images()
+    f = modules.InterestFilter()
+    batch = f.mask(x)
+    single = torch.cat([f.mask(x[i:i + 1]) for i in range(len(x))])
+    assert torch.equal(batch, single)
+
+
+@pytest.mark.parametrize("device", DEVICES)
+def test_interest_mask_is_the_same_on_every_device(device):
+    x = _stroke_images()
+    f = modules.InterestFilter()
+    on_cpu = f.mask(x)
+    on_device = f.to(device).mask(x.to(device))
+    assert on_device.device.type == device
+    assert torch.equal(on_device.cpu(), on_cpu)

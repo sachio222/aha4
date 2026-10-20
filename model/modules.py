@@ -120,9 +120,9 @@ class InterestFilter(nn.Module):
     """
 
     def __init__(self, dog_size=7, dog_std=0.82, dog_k=1.6, nms_size=5, k=20,
-                 smooth_size=15, smooth_std=2.375):
+                 smooth_size=15, smooth_std=2.375, resolution=1e-9):
         super(InterestFilter, self).__init__()
-        self.nms_size, self.k = nms_size, k
+        self.nms_size, self.k, self.resolution = nms_size, k, resolution
 
         dog = gaussian_kernel(dog_size, dog_std) - gaussian_kernel(dog_size, dog_std * dog_k)
         self.register_buffer("dog", dog[None, None])
@@ -133,7 +133,21 @@ class InterestFilter(nn.Module):
 
     def mask(self, images):
         """Returns a (batch, 1, H, W) mask with up to 2k interest points."""
-        response = F.conv2d(images, self.dog, padding=self.dog.shape[-1] // 2)
+
+        # Peak finding compares pixels for exact equality, which float32
+        # can't do reliably: batched CPU convolution leaves noise near 1e-8
+        # on blank page and breaks ties between neighbouring pixels, and
+        # each device does it differently. So the mask is always built in
+        # float64 on the CPU, rounded to a fine step to clear the last
+        # noise. It's one 52x52 channel per drawing, so it costs little,
+        # and every device gets the same points.
+        # Move first, then cast. From MPS, .to("cpu", torch.float64) in one
+        # call came back as all zeros.
+        device = images.device
+        x = images.detach().cpu().double()
+        dog = self.dog.detach().cpu().double()
+        response = F.conv2d(x, dog, padding=dog.shape[-1] // 2)
+        response = torch.round(response / self.resolution) * self.resolution
 
         mask = torch.zeros_like(response)
         # DoG+ catches light-to-dark edges and DoG- catches dark-to-light.
@@ -147,7 +161,7 @@ class InterestFilter(nn.Module):
             top = get_top_k(flat, self.k, "binary", 1, 1) * (flat > 0)
             mask = mask + top.view_as(r)
 
-        return mask.clamp(max=1.0)
+        return mask.clamp(max=1.0).float().to(device)
 
     def forward(self, images, features):
         features = features * self.mask(images)
